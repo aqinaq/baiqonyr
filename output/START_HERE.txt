@@ -1,0 +1,28 @@
+BAIKONUR ROCKET LAUNCH - COURSE PROJECT PACKAGE
+
+1. Unzip Baikonur_Source.zip. Read its README.md for exact build steps.
+   On this Mac, run.command builds and starts the application.
+   CMake and the course compiler/graphics setup must already be available.
+2. Baikonur_Report.pdf is the 19-page report; DOCX is the editable copy.
+3. Baikonur_Presentation.pptx contains 10 slides with speaker notes.
+   Suggested talk: 8 minutes 40 seconds. All four members have a part.
+4. Baikonur_Demo_1080p.mp4 is the captioned 3:20, 1080p, 30 FPS demo.
+5. Read REQUIREMENTS_CHECKLIST.md before submitting. The source archive
+   also includes a lecture map, defense Q&A, reference metadata and logs.
+
+The native application has been compiled and tested on this Apple M1 Mac.
+All three topic stretch features are included. The source bundles its
+project libraries and does not download dependencies during configuration.
+
+TEAM ACTIONS STILL REQUIRED
+Confirm defense/submission date and actual individual contributions;
+review and understand the implementation; verify the course/TA setup;
+confirm topic approval; push reviewed source to the team repository, add
+the TA and retain genuine member commits; tag the actual submission
+revision v1.0; upload the four deliverables to Moodle by the course deadline.
+
+Substantial OpenAI Codex assistance is disclosed in the report and README.
+No member contributions, commit history, TA results or submissions were
+fabricated. The report's submission date is intentionally unconfirmed.
+
+SHA256SUMS.txt records checksums of the five main deliverable files.

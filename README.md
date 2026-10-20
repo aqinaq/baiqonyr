@@ -1,1 +1,114 @@
-# baikonyr
+# Baikonur Rocket Launch
+
+Native C++17 / OpenGL 3.3 core final project for Computer Graphics Fundamentals. Launch a stylized rocket, follow it through a darkening sky, and inspect four independently detached boosters.
+
+## Build and run
+
+System prerequisites: CMake 3.20+, a C++17 compiler, desktop window system and OpenGL 3.3 core driver. GLFW 3.4, GLM 1.0.1, Dear ImGui 1.91.8 and GLAD are bundled under `vendor`; configuration does not download packages. No external models or textures are needed.
+
+On macOS you can double-click `run.command` after installing the course compiler and CMake. It builds and launches the application.
+
+macOS/Linux, from the project directory:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release --parallel 4
+ctest --test-dir build -C Release --output-on-failure
+./build/baikonur
+```
+
+Windows, from a Visual Studio developer terminal with the C++ desktop workload and CMake:
+
+```powershell
+cmake -S . -B build -A x64
+cmake --build build --config Release --parallel 4
+ctest --test-dir build -C Release --output-on-failure
+.\build\Release\baikonur.exe
+```
+
+macOS requires Xcode Command Line Tools. Linux uses GLFW's X11 backend, requiring the usual compiler, X11, Xrandr, Xinerama, Xcursor, Xi and OpenGL development headers. On Ubuntu these are provided by `build-essential cmake xorg-dev libgl1-mesa-dev`. They are system prerequisites; all project libraries are bundled. Confirm compatibility with the course assignment setup before submission. Windows/Linux commands have not been executed in this workspace.
+
+The build copies `shaders/` beside the executable. Keep that folder with the executable if moving it. A working-directory `shaders/` folder is also accepted. Run from a writable directory for screenshots. Context-creation errors usually require checking the graphics driver/OpenGL support or the desktop session.
+
+Verified locally: Apple M1, 8 GiB RAM, macOS 26.3.1, AppleClang 21.0.0, Release, OpenGL 4.1 core / Metal 90.5. Code uses the 3.3 feature set.
+
+## Controls
+
+| Action | Control |
+|---|---|
+| Launch eight-second countdown | Space / Launch button |
+| Pause or resume mission/particles | P |
+| Reset mission, particles and camera | R |
+| Separate boosters after T+5 | B; automatic at T+24 |
+| Toggle chase camera | C |
+| Orbit and pitch | Left drag / A,D and W,S |
+| Zoom | Wheel / Q,E |
+| Toggle ignition shake | K |
+| Toggle gantry light | L |
+| Toggle day/night | N |
+| Toggle wireframe | F |
+| Show/hide help | H |
+| Save `output/screenshot.ppm` | F12 |
+| Exit | Esc |
+| Change playback speed | On-screen slider |
+
+Camera movement remains available while paused. Input over the control panel belongs to the interface. The flight path is a compressed visual trajectory, not physical aerospace simulation.
+
+## Features and source layout
+
+- Indexed procedural cubes, cylinders, cones and spheres form the pad, rocket, boosters, gantry, buildings, tanks, radome, roads and lights.
+- Explicit MVP matrices and parent/child transforms; boosters detach in world space with continuous position and initial vertical velocity.
+- Own per-fragment Blinn-Phong GLSL, inverse-transpose normals, directional sun, toggled gantry light and moving engine light.
+- Concrete texture with UVs, repeat wrapping and mipmaps; procedural ground and sky.
+- Bounded fire/smoke pool, back-to-front alpha smoke and additive fire, two instanced billboard passes.
+- All topic stretch features: independent booster detachment, ignition shake and altitude stars.
+- Keyboard/mouse camera, scene controls, ImGui help, FPS/frame time and captioned demo replay.
+
+`src/` separates Shader, Mesh, Camera, Texture, Scene, Particles, Mission, UI and capture. Original application files are below 500 lines; vendored libraries retain upstream structure. `shaders/` has separate vertex/fragment files; `tests/` checks mission invariants. See [course mapping](docs/COURSE_MAP.md), [defense guide](docs/DEFENSE_GUIDE.md), [requirements checklist](docs/REQUIREMENTS_CHECKLIST.md) and [credits/licenses](CREDITS.md).
+
+## Validation and reproduction
+
+```sh
+./build/baikonur --duration 12 --no-vsync --csv output/ready.csv
+./build/baikonur --launch --start-time -3 --duration 12 --no-vsync --csv output/ascent.csv
+./build/baikonur --launch --start-time 24 --duration 12 --no-vsync --csv output/separation.csv
+```
+
+CSV output excludes the first two seconds. `python3 tools/benchmark.py` repeats these tests and updates `docs/evidence/metrics.json` and raw evidence; it expects the single-configuration `build/baikonur` path. Windows users can run the commands directly with their executable path. Close GPU-heavy work before measuring.
+
+Local 720p mean frame-loop throughput: 630.4 FPS ready, 757.6 FPS ignition/ascent, 1008.8 FPS separation/stars. Respective p95 frame times: 4.39, 3.36, 2.89 ms. The ready run had a 57.9 ms outlier; averages do not guarantee every frame meets the target. These are CPU frame-loop measurements including swaps, not GPU-only timings. TA-machine performance still requires verification. The full 1080p demo completed with zero OpenGL errors, mean 114.4 FPS and p95 13.48 ms while encoding.
+
+Replay the captioned 200-second sequence:
+
+```sh
+./build/baikonur --demo --duration 200
+```
+
+Optional recording requires an external FFmpeg encoder. **FFmpeg is not needed to build, run or assess the application**; the submitted MP4 is already encoded. To record again:
+
+```sh
+./build/baikonur --demo --width 1920 --height 1080 --duration 200 --record output/demo.mp4 --ffmpeg /absolute/path/to/ffmpeg
+```
+
+Recording captures the actual framebuffer at fixed 1920x1080, 30 FPS, without playback speed alteration. Manual input is locked only in `--demo`. Recording uses a single-sample target; ordinary window rendering requests four-sample MSAA. See `./build/baikonur --help` for other options.
+
+## Team
+
+| Member | Group | Proposed review/presentation ownership |
+|---|---|---|
+| Akbope Bakytkeldy | SE2426 | Scope, requirements, build; slides 1-2 |
+| Moldir Omar | SE2426 | Pipeline, geometry, hierarchy; slides 3-4 |
+| Ayaulym Talgat | SE2427 | Lighting, textures, particles; slides 5-7 |
+| Talant Altaikhan | SE2425 | Interaction, tests, results; slides 8-10 |
+
+These are suggested responsibilities, not completed student contributions. The team must record actual individual work before submission. Defense/submission date is unconfirmed. Instructor: Nazira Shaimerdenova.
+
+## AI Use
+
+OpenAI Codex substantially assisted with C++ code, procedural geometry/textures, GLSL, tests, builds, research/reference checks, report, slides, documentation, measurements and recorded demo. The user selected the topic, supplied the assignment documents and lectures, and provided team identities. The team has not yet confirmed independent contributions or understanding.
+
+AI-assisted validation fixed GLAD definition scope, particle emission ratio at high FPS, help overlap, fixed-size capture, framebuffer sample compatibility, demo input interference and camera framing. Builds, simulation tests and live rendering checks followed. See the report's detailed AI Use Note. Members must review and explain the source, verify their course setup, perform genuine substantive work, and update this disclosure. No student history or participation has been fabricated.
+
+## Submission
+
+The package includes source, template-based report DOCX/PDF, ten-slide PPTX with notes, and a 3:20 captioned 1080p demo. Complete the external/personal items in the checklist: topic approval, actual member contributions and commits, hosted repository/TA access, `v1.0` tag on the actual submission revision, dates, TA-machine checks and Moodle upload. Deadline: three days before defense at 23:59 Asia/Almaty. This package does not establish those actions or guarantee a grade.

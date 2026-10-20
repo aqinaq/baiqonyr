@@ -1,0 +1,16 @@
+{
+  "clean_release_build": "passed",
+  "compiler_warnings": 0,
+  "ctest": "1/1 passed (15 assertions)",
+  "final_demo_gl_errors": 0,
+  "report_pages": 19,
+  "report_visual_qa": "All pages inspected; final changed pages rechecked",
+  "template_preservation": "Section XML and non-editable package parts byte-identical",
+  "slides": 10,
+  "slides_visual_qa": "All 10 inspected",
+  "pptx_package_and_layout": "passed, zero findings",
+  "pptx_first_party_reimport": true,
+  "pptx_sha256": "68dda34fd537b6e8caad511ed407bd77839b02aaae82567db130396a7e7bdd4e",
+  "manual_input": "Code paths reviewed; native executable was not exposed to UI automation. Team should exercise controls on the course machine.",
+  "target_machine": "not available; local performance is not a TA-machine guarantee"
+}

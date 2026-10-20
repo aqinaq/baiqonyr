@@ -1,0 +1,8 @@
+build*/
+tmp/
+.DS_Store
+imgui.ini
+*.ppm
+*.rgb
+output/*.mp4
+output/*.zip

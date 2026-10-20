@@ -1,0 +1,4 @@
+Command: /Users/aruispan/CGF-final/build/baikonur --duration 12 --no-vsync --csv /Users/aruispan/CGF-final/docs/evidence/separation_and_stars.csv --launch --start-time 24
+GPU: Apple M1
+OpenGL: 4.1 Metal - 90.5
+Frames: 10091 Mean FPS: 1008.83 p95 ms: 2.88908 GL errors: 0
