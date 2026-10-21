@@ -7,7 +7,7 @@ root = Path(__file__).resolve().parents[1]
 out = root / 'output'
 source = out / 'Baikonur_Source.zip'
 roots = ['CMakeLists.txt', 'README.md', 'CREDITS.md', '.gitignore', '.clang-format',
-         'run.command', 'src', 'shaders', 'tests', 'vendor', 'tools', 'docs']
+         'run.command', 'src', 'assets', 'shaders', 'tests', 'vendor', 'tools', 'docs']
 with zipfile.ZipFile(source, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as z:
     for name in roots:
         target = root / name
@@ -19,6 +19,8 @@ with zipfile.ZipFile(source, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as z:
 with zipfile.ZipFile(source) as z:
     assert z.testzip() is None
     assert 'Baikonur_Source/vendor/glfw/deps/glad/gl.h' in z.namelist()
+    assert 'Baikonur_Source/assets/fonts/Roboto-Medium.ttf' in z.namelist()
+    assert 'Baikonur_Source/assets/fonts/LICENSE-Roboto.txt' in z.namelist()
     assert not any('/build/' in n or '/tmp/' in n or '/.git/' in n for n in z.namelist())
 
 files = [source, out / 'Baikonur_Report.docx', out / 'pdf/Baikonur_Report.pdf',

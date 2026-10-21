@@ -8,6 +8,7 @@ All geometry, the concrete texture, procedural steppe/sky/stars, GLSL scene and 
 | GLAD | David Herberth and contributors | Generated loader shipped in GLFW 3.4, https://github.com/glfw/glfw/blob/3.4/deps/glad/gl.h | MIT / Khronos registry notices embedded in header; GLFW `deps/glad` notices retained |
 | GLM | G-Truc Creation and contributors | 1.0.1, https://github.com/g-truc/glm/tree/1.0.1 | MIT or Happy Bunny, `vendor/glm/copying.txt` |
 | Dear ImGui | Omar Cornut and contributors | 1.91.8, https://github.com/ocornut/imgui/tree/v1.91.8 | MIT, `vendor/imgui/LICENSE.txt`; embedded ProggyClean font notice retained |
+| Roboto Medium | Christian Robertson / Google | TrueType font bundled with Dear ImGui 1.91.8 | Apache 2.0, `assets/fonts/LICENSE-Roboto.txt` |
 
 The GLAD file exposes a compatibility superset but the application explicitly requests a **core-profile context** and only calls modern buffer/shader operations. No legacy GL rendering calls are made by project source. ImGui supplies UI rendering only; it does not generate the 3D lighting shaders.
 
@@ -19,7 +20,7 @@ The supplied course lectures include material credited on their slides to E. Ang
 
 ## Deliverable tooling
 
-The report uses the supplied course template. The presentation uses actual project captures. The MP4 is a real-time framebuffer capture of the application, with the same image displayed in its window, encoded by FFmpeg 7.1 via the imageio-ffmpeg distribution. FFmpeg and temporary authoring tools are not runtime dependencies and are not included in the source archive. Captions are drawn by the application; the video has no music or voice-over. A final H.264 compression pass reduces file size while retaining the original 200-second duration, 1920x1080 resolution and 30 FPS timeline.
+The report uses the supplied course template. The presentation uses actual project captures. The MP4 is a real-time framebuffer capture of the application, with the same image displayed in its window, encoded by FFmpeg 7.1 via the imageio-ffmpeg distribution. FFmpeg and temporary authoring tools are not runtime dependencies and are not included in the source archive. Captions are drawn by the application; the video has no music or voice-over. The quality revision captures natively at 3840x2160 with four-sample MSAA. The final demo joins actual capture segments from two takes, with cuts at 45 and 55 seconds to include the optimized wireframe mode. The final paused image is held briefly to complete 200 seconds. No footage is sped up or motion-interpolated. A Lanczos downsampling and H.264 compression pass produces the 1920x1080 submission video while retaining the 200-second duration and 30 FPS timeline.
 
 ## AI Use
 

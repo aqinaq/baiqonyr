@@ -1,4 +1,4 @@
-Command: /Users/aruispan/CGF-final/build/baikonur --duration 12 --no-vsync --csv /Users/aruispan/CGF-final/docs/evidence/ready.csv
+Command: /Users/aruispan/CGF-final/build/baikonur --duration 12 --width 1280 --height 720 --no-retina --no-vsync --csv /Users/aruispan/CGF-final/docs/evidence/ready.csv
 GPU: Apple M1
 OpenGL: 4.1 Metal - 90.5
-Frames: 6304 Mean FPS: 630.402 p95 ms: 4.39112 GL errors: 0
+Frames: 10683 Mean FPS: 1068.3 p95 ms: 1.32471 GL errors: 0

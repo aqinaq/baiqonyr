@@ -6,7 +6,8 @@ BAIKONUR ROCKET LAUNCH - COURSE PROJECT PACKAGE
 2. Baikonur_Report.pdf is the 19-page report; DOCX is the editable copy.
 3. Baikonur_Presentation.pptx contains 10 slides with speaker notes.
    Suggested talk: 8 minutes 40 seconds. All four members have a part.
-4. Baikonur_Demo_1080p.mp4 is the captioned 3:20, 1080p, 30 FPS demo.
+4. Baikonur_Demo_1080p.mp4 is the captioned 3:20, 1080p, 30 FPS demo,
+   downsampled from a native 4K capture with four-sample antialiasing.
 5. Read REQUIREMENTS_CHECKLIST.md before submitting. The source archive
    also includes a lecture map, defense Q&A, reference metadata and logs.
 

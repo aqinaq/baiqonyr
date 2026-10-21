@@ -1,6 +1,8 @@
 #include "Mesh.hpp"
 #include "Simulation.hpp"
 #include <cstddef>
+#include <set>
+#include <utility>
 namespace bk {
 Geometry cube() {
     Geometry g;
@@ -80,6 +82,25 @@ Mesh::Mesh(const Geometry &g) : count((GLsizei)g.indices.size()) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, g.indices.size() * sizeof(unsigned), g.indices.data(),
                  GL_STATIC_DRAW);
+    // Reuse the exact triangle topology; indexed lines are faster on the tested GPU.
+    std::set<std::pair<unsigned, unsigned>> uniqueEdges;
+    for (size_t i = 0; i < g.indices.size(); i += 3)
+        for (size_t j = 0; j < 3; j++) {
+            unsigned a = g.indices[i + j], b = g.indices[i + (j + 1) % 3];
+            uniqueEdges.emplace(std::min(a, b), std::max(a, b));
+        }
+    std::vector<unsigned> edgeIndices;
+    edgeIndices.reserve(uniqueEdges.size() * 2);
+    for (auto [a, b] : uniqueEdges) {
+        edgeIndices.push_back(a);
+        edgeIndices.push_back(b);
+    }
+    edgeCount = (GLsizei)edgeIndices.size();
+    glGenBuffers(1, &edges);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, edges);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, edgeIndices.size() * sizeof(unsigned), edgeIndices.data(),
+                 GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           (void *)offsetof(Vertex, position));
@@ -91,12 +112,15 @@ Mesh::Mesh(const Geometry &g) : count((GLsizei)g.indices.size()) {
     glBindVertexArray(0);
 }
 Mesh::~Mesh() {
+    glDeleteBuffers(1, &edges);
     glDeleteBuffers(1, &ebo);
     glDeleteBuffers(1, &vbo);
     glDeleteVertexArrays(1, &vao);
 }
-void Mesh::draw() const {
+void Mesh::draw(bool wireframe) const {
     glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, wireframe ? edges : ebo);
+    glDrawElements(wireframe ? GL_LINES : GL_TRIANGLES, wireframe ? edgeCount : count,
+                   GL_UNSIGNED_INT, nullptr);
 }
 } // namespace bk

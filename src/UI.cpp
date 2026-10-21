@@ -1,14 +1,28 @@
 #include "UI.hpp"
 #include <cstdio>
 #include <imgui.h>
+#include <stdexcept>
 namespace bk {
-void setupUI() {
+static ImFont *titleFont = nullptr, *metricFont = nullptr, *captionFont = nullptr;
+void setupUI(const std::string &fontPath) {
+    auto &io = ImGui::GetIO();
+    // TrueType glyphs baked at 3x support Retina windows and native 4K capture.
+    ImFontConfig config;
+    config.OversampleH = 2;
+    config.OversampleV = 2;
+    io.FontDefault = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 45.f, &config);
+    titleFont = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 84.f, &config);
+    metricFont = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 66.f, &config);
+    captionFont = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 54.f, &config);
+    if (!io.FontDefault || !titleFont || !metricFont || !captionFont)
+        throw std::runtime_error("Bundled Roboto font missing; keep assets beside the executable");
+    io.FontGlobalScale = 1.f / 3.f;
     ImGui::StyleColorsDark();
     auto &s = ImGui::GetStyle();
     s.WindowRounding = 8;
     s.FrameRounding = 4;
     s.WindowPadding = {18, 16};
-    s.ItemSpacing = {9, 10};
+    s.ItemSpacing = {9, 7};
     s.FramePadding = {9, 7};
     s.WindowBorderSize = 1;
     s.Colors[ImGuiCol_WindowBg] = {.025f, .045f, .065f, .94f};
@@ -73,7 +87,7 @@ void directDemo(double t, Mission &m, Camera &c, Scene &s, Particles &p) {
         s.wireframe = t < 55;
     if ((stage == 3 || stage == 6) && m.clock > 22) {
         c.distance = std::min(78.f, 43.f + (m.clock - 22) * 4.f);
-        c.pitch = .12f - .47f * std::clamp((m.clock-22)/2.f,0.f,1.f);
+        c.pitch = .12f - .47f * std::clamp((m.clock - 22) / 2.f, 0.f, 1.f);
     }
     if (t >= 198)
         m.paused = true;
@@ -87,9 +101,9 @@ void drawUI(Mission &m, Camera &c, Scene &s, const Particles &p, UIState &ui) {
                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::TextColored({.45f, .86f, .8f, 1}, "BAIKONUR / FLIGHT CONTROL");
     ImGui::Spacing();
-    ImGui::SetWindowFontScale(1.8f);
+    ImGui::PushFont(titleFont);
     ImGui::TextUnformatted("Launch 09");
-    ImGui::SetWindowFontScale(1);
+    ImGui::PopFont();
     ImGui::TextDisabled("A COMPUTER GRAPHICS STUDY");
     ImGui::Separator();
     ImGui::TextColored({1, .66f, .32f, 1}, "%s", m.phase().c_str());
@@ -100,25 +114,33 @@ void drawUI(Mission &m, Camera &c, Scene &s, const Particles &p, UIState &ui) {
     ImGui::Text("PARTICLES      %8zu", p.count());
     ImGui::TextDisabled("Compressed visual trajectory");
     ImGui::Separator();
-    ImGui::BeginDisabled(ui.demo);
-    if (ImGui::Button(m.running ? "PAUSE / RESUME  [P]" : "START COUNTDOWN  [SPACE]", {-1, 36})) {
-        if (m.running)
-            m.paused = !m.paused;
-        else
-            m.launch();
+    if (!ui.demo) {
+        if (ImGui::Button(m.running ? "PAUSE / RESUME  [P]" : "START COUNTDOWN  [SPACE]",
+                          {-1, 36})) {
+            if (m.running)
+                m.paused = !m.paused;
+            else
+                m.launch();
+        }
+        if (ImGui::Button("RESET  [R]", {123, 0}))
+            ui.reset = true;
+        ImGui::SameLine();
+        if (ImGui::Button("SEPARATE [B]", {123, 0}))
+            m.separate();
+        ImGui::Checkbox("Chase camera [C]", &c.chase);
+        ImGui::Checkbox("Ignition shake [K]", &c.shake);
+        ImGui::Checkbox("Gantry light [L]", &s.lights);
+        ImGui::Checkbox("Night lighting [N]", &s.night);
+        ImGui::Checkbox("Wireframe [F]", &s.wireframe);
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 60.f);
+        ImGui::SliderFloat("Speed", &m.speed, .25f, 2.f, "%.2fx");
+    } else {
+        ImGui::Spacing();
+        ImGui::Text("Camera: %s", c.chase ? "Chase" : "Orbit");
+        ImGui::Text("Light: %s / %s", s.night ? "Night" : "Day",
+                    s.lights ? "Gantry on" : "Gantry off");
+        ImGui::Text("Mission: %s", m.paused ? "Paused" : m.running ? "Running" : "Ready");
     }
-    if (ImGui::Button("RESET  [R]", {123, 0}))
-        ui.reset = true;
-    ImGui::SameLine();
-    if (ImGui::Button("SEPARATE [B]", {123, 0}))
-        m.separate();
-    ImGui::Checkbox("Chase camera [C]", &c.chase);
-    ImGui::Checkbox("Ignition shake [K]", &c.shake);
-    ImGui::Checkbox("Gantry light [L]", &s.lights);
-    ImGui::Checkbox("Night lighting [N]", &s.night);
-    ImGui::Checkbox("Wireframe [F]", &s.wireframe);
-    ImGui::SliderFloat("Speed", &m.speed, .25f, 2.f, "%.2fx");
-    ImGui::EndDisabled();
     ImGui::TextDisabled("BOOSTERS  %s", m.separated ? "DETACHED" : "ATTACHED");
     ImGui::End();
     ImGui::SetNextWindowPos({io.DisplaySize.x - 292, 24});
@@ -126,17 +148,17 @@ void drawUI(Mission &m, Camera &c, Scene &s, const Particles &p, UIState &ui) {
     ImGui::Begin("Performance", nullptr,
                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::TextColored({.45f, .86f, .8f, 1}, "LIVE RENDERER");
-    ImGui::SetWindowFontScale(1.4f);
+    ImGui::PushFont(metricFont);
     ImGui::Text("%5.1f FPS", ui.fps);
-    ImGui::SetWindowFontScale(1);
+    ImGui::PopFont();
     ImGui::Text("%.2f ms / frame", ui.frameMs);
-    ImGui::Text("%.0f x %.0f", io.DisplaySize.x, io.DisplaySize.y);
+    ImGui::Text("%d x %d  /  4x MSAA", ui.pixelWidth, ui.pixelHeight);
     ImGui::Text("OpenGL core / indexed meshes");
     ImGui::TextWrapped("%s", ui.gpu.c_str());
     ImGui::End();
     if (ui.help) {
-        ImGui::SetNextWindowPos({io.DisplaySize.x - 534, io.DisplaySize.y - 100});
-        ImGui::SetNextWindowSize({510, 76});
+        ImGui::SetNextWindowPos({io.DisplaySize.x - 534, io.DisplaySize.y - (ui.demo ? 178 : 104)});
+        ImGui::SetNextWindowSize({510, 88});
         ImGui::Begin("Help", nullptr, ImGuiWindowFlags_NoDecoration);
         ImGui::TextColored({.45f, .86f, .8f, 1}, "CAMERA & CONTROLS");
         ImGui::Text("Drag: orbit   Scroll: zoom   WASD: orbit / pitch");
@@ -165,10 +187,12 @@ void drawUI(Mission &m, Camera &c, Scene &s, const Particles &p, UIState &ui) {
             : ui.wall < 196
                 ? "NIGHT LAUNCH  |  Moving engine light, instanced flame, sorted translucent smoke"
                 : "BAIKONUR  |  Booster separation against the stars";
-        ImGui::SetNextWindowPos({io.DisplaySize.x * .5f - 480, io.DisplaySize.y - 190});
-        ImGui::SetNextWindowSize({960, 65});
+        ImGui::SetNextWindowPos({io.DisplaySize.x * .5f - 480, io.DisplaySize.y - 90});
+        ImGui::SetNextWindowSize({960, 70});
         ImGui::Begin("Demo captions", nullptr, ImGuiWindowFlags_NoDecoration);
+        ImGui::PushFont(captionFont);
         ImGui::TextWrapped("%s", caption);
+        ImGui::PopFont();
         ImGui::End();
     }
 }

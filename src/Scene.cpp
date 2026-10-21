@@ -114,7 +114,7 @@ void Scene::draw(const Object &o, const glm::mat4 &parent) {
     shader.set("shininess", o.shine);
     shader.set("emission", o.emission);
     const Mesh *meshes[] = {&box, &tube, &cone, &ball};
-    meshes[o.mesh]->draw();
+    meshes[o.mesh]->draw(wireframe);
 }
 void Scene::render(const Mission &m, Camera &camera, int width, int height, float realTime) {
     glm::mat4 view = camera.view(m, realTime),
@@ -135,8 +135,6 @@ void Scene::render(const Mission &m, Camera &camera, int width, int height, floa
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
-    if (wireframe)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     shader.use();
     concrete.bind();
     shader.set("concrete", 0);

@@ -3,13 +3,13 @@
 #include <vector>
 namespace bk {
 Texture::Texture() {
-    const int size = 256;
+    const int size = 1024;
     std::vector<unsigned char> data(size * size * 3);
     std::mt19937 rng(2426);
     for (int y = 0; y < size; y++)
         for (int x = 0; x < size; x++) {
             int noise = int(rng() % 31) - 15;
-            bool joint = x < 2 || y < 2;
+            bool joint = x < 5 || y < 5;
             for (int c = 0; c < 3; c++)
                 data[(y * size + x) * 3 + c] = (unsigned char)(joint ? 80 : 170 + noise);
         }

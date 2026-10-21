@@ -5,7 +5,7 @@ root=Path(__file__).resolve().parents[1];out=root/'docs/evidence';out.mkdir(exis
 runs=[]
 for name,args in [('Ready',[]),('Ignition and ascent',['--launch','--start-time','-3']),('Separation and stars',['--launch','--start-time','24'])]:
  stem=name.lower().replace(' ','_');csvpath=out/(stem+'.csv')
- command=[str(root/'build/baikonur'),'--duration','12','--no-vsync','--csv',str(csvpath)]+args
+ command=[str(root/'build/baikonur'),'--duration','12','--width','1280','--height','720','--no-retina','--no-vsync','--csv',str(csvpath)]+args
  result=subprocess.run(command,cwd=root,text=True,capture_output=True,timeout=40)
  (out/(stem+'.log')).write_text('Command: '+' '.join(command)+'\n'+result.stdout+result.stderr)
  if result.returncode:raise RuntimeError(result.stdout+result.stderr)

@@ -1,3 +1,4 @@
 GPU: Apple M1
 OpenGL: 4.1 Metal - 90.5
-Frames: 6954 Mean FPS: 119.894 p95 ms: 13.1885 GL errors: 0
+Screenshot: tmp/quality/interactive-fixed.ppm
+Frames: 115 Mean FPS: 57.5211 p95 ms: 17.4945 GL errors: 0

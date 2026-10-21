@@ -47,7 +47,7 @@ Demo: 200 seconds, 1920x1080, 30 FPS, feature captions, actual renderer and cont
 - [ ] Push reviewed source to GitHub/GitLab, add the TA and retain genuine member commits. Do not fabricate history.
 - [ ] Tag the real submission revision `v1.0` on the submission date.
 - [ ] Upload repository link/tag, report PDF, slide deck and demo to Moodle.
-- [ ] Rehearse the 7-10 minute talk and 3-5 minute Q&A. Every member must explain any module; keep an offline executable/shaders and video backup.
+- [ ] Rehearse the 7-10 minute talk and 3-5 minute Q&A. Every member must explain any module; keep an offline executable/shaders/assets and video backup.
 - [ ] Confirm course progress checks already attended. Preparing files cannot retroactively satisfy those milestones.
 
 No instructor messages, account/sharing changes or assignment submissions were performed by this preparation.

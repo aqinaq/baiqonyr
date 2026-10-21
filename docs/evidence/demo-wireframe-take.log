@@ -1,0 +1,4 @@
+[h264_videotoolbox @ 0x13d107ef0] Color range not set for yuv420p. Using MPEG range.
+GPU: Apple M1
+OpenGL: 4.1 Metal - 90.5
+Frames: 9119 Mean FPS: 45.8896 p95 ms: 40.8967 GL errors: 0

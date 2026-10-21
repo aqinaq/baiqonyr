@@ -28,7 +28,7 @@ ctest --test-dir build -C Release --output-on-failure
 
 macOS requires Xcode Command Line Tools. Linux uses GLFW's X11 backend, requiring the usual compiler, X11, Xrandr, Xinerama, Xcursor, Xi and OpenGL development headers. On Ubuntu these are provided by `build-essential cmake xorg-dev libgl1-mesa-dev`. They are system prerequisites; all project libraries are bundled. Confirm compatibility with the course assignment setup before submission. Windows/Linux commands have not been executed in this workspace.
 
-The build copies `shaders/` beside the executable. Keep that folder with the executable if moving it. A working-directory `shaders/` folder is also accepted. Run from a writable directory for screenshots. Context-creation errors usually require checking the graphics driver/OpenGL support or the desktop session.
+The build copies `shaders/` and `assets/` beside the executable. Keep both folders with the executable if moving it. These folders are also accepted from the working directory. Run from a writable directory for screenshots. Context-creation errors usually require checking the graphics driver/OpenGL support or the desktop session.
 
 Verified locally: Apple M1, 8 GiB RAM, macOS 26.3.1, AppleClang 21.0.0, Release, OpenGL 4.1 core / Metal 90.5. Code uses the 3.3 feature set.
 
@@ -60,6 +60,7 @@ Camera movement remains available while paused. Input over the control panel bel
 - Explicit MVP matrices and parent/child transforms; boosters detach in world space with continuous position and initial vertical velocity.
 - Own per-fragment Blinn-Phong GLSL, inverse-transpose normals, directional sun, toggled gantry light and moving engine light.
 - Concrete texture with UVs, repeat wrapping and mipmaps; procedural ground and sky.
+- Wireframe inspection draws deduplicated triangle edges with `GL_LINES`, avoiding the slow polygon-mode path on the tested driver. Use F or start with `--wireframe`.
 - Bounded fire/smoke pool, back-to-front alpha smoke and additive fire, two instanced billboard passes.
 - All topic stretch features: independent booster detachment, ignition shake and altitude stars.
 - Keyboard/mouse camera, scene controls, ImGui help, FPS/frame time and captioned demo replay.
@@ -69,14 +70,14 @@ Camera movement remains available while paused. Input over the control panel bel
 ## Validation and reproduction
 
 ```sh
-./build/baikonur --duration 12 --no-vsync --csv output/ready.csv
-./build/baikonur --launch --start-time -3 --duration 12 --no-vsync --csv output/ascent.csv
-./build/baikonur --launch --start-time 24 --duration 12 --no-vsync --csv output/separation.csv
+./build/baikonur --duration 12 --no-retina --no-vsync --csv output/ready.csv
+./build/baikonur --launch --start-time -3 --duration 12 --no-retina --no-vsync --csv output/ascent.csv
+./build/baikonur --launch --start-time 24 --duration 12 --no-retina --no-vsync --csv output/separation.csv
 ```
 
 CSV output excludes the first two seconds. `python3 tools/benchmark.py` repeats these tests and updates `docs/evidence/metrics.json` and raw evidence; it expects the single-configuration `build/baikonur` path. Windows users can run the commands directly with their executable path. Close GPU-heavy work before measuring.
 
-Local 720p mean frame-loop throughput: 630.4 FPS ready, 757.6 FPS ignition/ascent, 1008.8 FPS separation/stars. Respective p95 frame times: 4.39, 3.36, 2.89 ms. The ready run had a 57.9 ms outlier; averages do not guarantee every frame meets the target. These are CPU frame-loop measurements including swaps, not GPU-only timings. TA-machine performance still requires verification. The full 1080p demo completed with zero OpenGL errors, mean 114.4 FPS and p95 13.48 ms while encoding.
+Local 720p mean frame-loop throughput: 1068.3 FPS ready, 699.0 FPS ignition/ascent, 929.9 FPS separation/stars. Respective p95 frame times: 1.32, 2.44, 1.76 ms. Occasional frame outliers remain; averages do not guarantee every frame meets the target. These are CPU frame-loop measurements including swaps, not GPU-only timings. TA-machine performance still requires verification.
 
 Replay the captioned 200-second sequence:
 
@@ -90,7 +91,9 @@ Optional recording requires an external FFmpeg encoder. **FFmpeg is not needed t
 ./build/baikonur --demo --width 1920 --height 1080 --duration 200 --record output/demo.mp4 --ffmpeg /absolute/path/to/ffmpeg
 ```
 
-Recording captures the actual framebuffer at fixed 1920x1080, 30 FPS, without playback speed alteration. Manual input is locked only in `--demo`. Recording uses a single-sample target; ordinary window rendering requests four-sample MSAA. See `./build/baikonur --help` for other options.
+Retina rendering is enabled by default. Use `--no-retina` for a physical 1280x720 benchmark on macOS. Both window rendering and recording use four-sample MSAA. Curved meshes have finer tessellation, the concrete texture is 1024x1024 with mipmaps, and bundled Roboto text uses a high-resolution font atlas. Keep both `assets/` and `shaders/` beside the executable; CMake copies them automatically.
+
+Recording captures the actual framebuffer at the requested resolution and 30 FPS, without playback speed alteration. The submitted 1080p demo is downsampled from native 3840x2160 capture segments for smoother fine detail. Two takes are joined at 45 and 55 seconds, retaining the updated wireframe demonstration and the complete launch; see CREDITS.md. To capture native 4K, use `--width 3840 --height 2160`; recording requires more GPU and encoding throughput. For recording, `--no-vsync` avoids limiting throughput to display refresh intervals. On macOS, `--hardware-encode` selects FFmpeg VideoToolbox H.264 at 50 Mbps to reduce CPU encoding load. The default remains portable software H.264. Manual input is locked only in `--demo`. See `./build/baikonur --help` for other options.
 
 ## Team
 

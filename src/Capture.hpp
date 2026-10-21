@@ -42,12 +42,17 @@ class Recorder {
     int frames = 0;
 
   public:
-    Recorder(const std::string &exe, const std::string &file, int w, int h) : width(w), height(h) {
+    Recorder(const std::string &exe, const std::string &file, int w, int h, bool hardware = false)
+        : width(w), height(h) {
+        std::string encoder = hardware
+                                  ? " -c:v h264_videotoolbox -b:v 50M -profile:v high -realtime 1"
+                                  : " -c:v libx264 -preset ultrafast -crf 16";
         std::string command =
             shellQuote(exe) +
             " -hide_banner -loglevel warning -y -f rawvideo -pixel_format rgb24 -video_size " +
-            std::to_string(w) + "x" + std::to_string(h) +
-            " -framerate 30 -i - -vf vflip -c:v libx264 -preset ultrafast -crf 21 -pix_fmt yuv420p "
+            std::to_string(w) + "x" + std::to_string(h) + " -framerate 30 -i - -vf vflip" +
+            encoder +
+            " -pix_fmt yuv420p "
             "-movflags +faststart " +
             shellQuote(file);
 #ifdef _WIN32

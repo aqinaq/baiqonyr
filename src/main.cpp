@@ -21,7 +21,8 @@ struct Options {
     int width = 1280, height = 720;
     double duration = 0, captureAt = -1;
     float startTime = -8;
-    bool demo = false, launch = false, vsync = true;
+    bool demo = false, launch = false, vsync = true, retina = true, hardwareEncode = false,
+         wireframe = false;
     std::string capture = "output/screenshot.ppm", csv, record, ffmpeg = "ffmpeg";
 };
 Options options(int argc, char **argv) {
@@ -51,16 +52,24 @@ Options options(int argc, char **argv) {
             o.record = value();
         else if (a == "--ffmpeg")
             o.ffmpeg = value();
+        else if (a == "--hardware-encode")
+            o.hardwareEncode = true;
+        else if (a == "--wireframe")
+            o.wireframe = true;
         else if (a == "--demo")
             o.demo = true;
         else if (a == "--launch")
             o.launch = true;
+        else if (a == "--no-retina")
+            o.retina = false;
         else if (a == "--no-vsync")
             o.vsync = false;
         else if (a == "--help") {
-            std::cout << "Baikonur: --demo --duration SECONDS --launch --start-time SECONDS "
-                         "--width N --height N --no-vsync --csv FILE --capture-at SECONDS "
-                         "--capture FILE.ppm --record FILE.mp4 --ffmpeg PATH\n";
+            std::cout
+                << "Baikonur: --demo --duration SECONDS --launch --start-time SECONDS "
+                   "--width N --height N --no-retina --no-vsync --csv FILE --capture-at SECONDS "
+                   "--capture FILE.ppm --record FILE.mp4 --ffmpeg PATH --wireframe "
+                   "--hardware-encode (macOS)\n";
             std::exit(0);
         } else
             throw std::runtime_error("Unknown option: " + a);
@@ -83,7 +92,7 @@ int main(int argc, char **argv) {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
         glfwWindowHint(GLFW_SAMPLES, o.record.empty() ? 4 : 0);
-        glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GL_FALSE);
+        glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, o.retina ? GL_TRUE : GL_FALSE);
         window = glfwCreateWindow(o.width, o.height, "BAIKONUR / Launch 09", nullptr, nullptr);
         if (!window)
             throw std::runtime_error("OpenGL 3.3 core context unavailable");
@@ -99,7 +108,10 @@ int main(int argc, char **argv) {
         ImGui::CreateContext();
         ImGui_ImplGlfw_InitForOpenGL(window, true);
         ImGui_ImplOpenGL3_Init("#version 330 core");
-        setupUI();
+        auto assetDir = std::filesystem::absolute(argv[0]).parent_path() / "assets";
+        if (!std::filesystem::exists(assetDir))
+            assetDir = "assets";
+        setupUI((assetDir / "fonts/Roboto-Medium.ttf").string());
         imguiReady = true;
         {
             std::filesystem::path shaderDir =
@@ -107,6 +119,7 @@ int main(int argc, char **argv) {
             if (!std::filesystem::exists(shaderDir))
                 shaderDir = "shaders";
             Scene scene(shaderDir.string());
+            scene.wireframe = o.wireframe;
             Particles particles(shaderDir.string());
             Camera camera;
             Mission mission;
@@ -131,7 +144,8 @@ int main(int argc, char **argv) {
             glfwGetFramebufferSize(window, &w, &h);
             if (!o.record.empty()) {
                 target = std::make_unique<RenderTarget>(o.width, o.height);
-                recorder = std::make_unique<Recorder>(o.ffmpeg, o.record, o.width, o.height);
+                recorder = std::make_unique<Recorder>(o.ffmpeg, o.record, o.width, o.height,
+                                                      o.hardwareEncode);
             }
             double start = glfwGetTime(), last = start, fpsStart = start;
             int frames = 0;
@@ -161,10 +175,13 @@ int main(int argc, char **argv) {
                     w = o.width;
                     h = o.height;
                     auto &io = ImGui::GetIO();
-                    io.MousePos.x *= float(w) / io.DisplaySize.x;
-                    io.MousePos.y *= float(h) / io.DisplaySize.y;
-                    io.DisplaySize = {float(w), float(h)};
-                    io.DisplayFramebufferScale = {1, 1};
+                    // Keep the UI readable at every capture resolution, independently of physical
+                    // pixels.
+                    float logicalW = 1280.f, logicalH = logicalW * h / w;
+                    io.MousePos.x *= logicalW / io.DisplaySize.x;
+                    io.MousePos.y *= logicalH / io.DisplaySize.y;
+                    io.DisplaySize = {logicalW, logicalH};
+                    io.DisplayFramebufferScale = {float(w) / logicalW, float(h) / logicalH};
                 }
                 ImGui::NewFrame();
                 auto pressed = [&](int key) {
@@ -244,9 +261,13 @@ int main(int argc, char **argv) {
                     glfwSetWindowTitle(window, title.c_str());
                 }
                 ui.wall = wall;
+                ui.pixelWidth = w;
+                ui.pixelHeight = h;
                 drawUI(mission, camera, scene, particles, ui);
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+                if (target)
+                    target->resolve();
                 if (pressed(GLFW_KEY_F12) ||
                     (!captured && o.captureAt >= 0 && wall >= o.captureAt)) {
                     screenshot(o.capture, w, h);

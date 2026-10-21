@@ -11,7 +11,7 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
 root=Path(__file__).resolve().parents[1]
-parser=argparse.ArgumentParser();parser.add_argument('--template',default='/Users/aruispan/Downloads/Report template (2).docx');args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--template',default='/Users/aruispan/Downloads/Report template (2).docx');parser.add_argument('--submission-date',default='');args=parser.parse_args()
 reference=Path(args.template);d=Document(reference)
 metrics=json.loads((root/'docs/evidence/metrics.json').read_text())
 refs=json.loads((root/'docs/references.json').read_text())
@@ -26,7 +26,7 @@ for p in d.paragraphs:
   except KeyError:pass
   for r in p.runs:r.font.name='Times New Roman';r.font.size=Pt(12);r.font.color.rgb=RGBColor(0,0,0)
  if '[Insert Names and group]' in p.text:p.runs[-1].text=' Akbope Bakytkeldy, SE2426\nMoldir Omar, SE2426\nAyaulym Talgat, SE2427\nTalant Altaikhan, SE2425'
- if '[Insert Date]' in p.text:p.runs[-1].text=' To be confirmed by the team'
+ if '[Insert Date]' in p.text:p.runs[-1].text=' '+args.submission_date
 
 pages=[]
 def p(text='',bold=False,center=False,keep=False,size=12):
@@ -128,7 +128,7 @@ p('Losasso, Gibou and Fedkiw [8] use an octree to concentrate simulation resolut
 p('Selle, Rasmussen and Fedkiw [9] combine vortex particles with an Eulerian representation to recover turbulent detail that can be lost in grid-based advection. Their method treats particles as carriers of rotational flow information, whereas the project particles are independent visual elements. The distinction is important: the implemented smoke has plausible drift and expansion, but it does not preserve vorticity or satisfy incompressible flow equations.')
 p('Bridson, Hourihan and Nordenstam [10] derive procedural velocity fields using curl noise, enabling incompressible turbulent motion and boundary-aware behavior without a full simulation. This offers a closer extension path for the current application than an adaptive fluid solver. A future version could replace the simple outward smoke velocity with a curl-noise field. The current release does not label its sinusoidal ground pattern or random particle velocities as curl noise.')
 p('Kim and colleagues [11] separate large-scale motion from high-frequency turbulence using wavelets. This separation helps artists add detail without recomputing every aspect of the base flow. It also suggests a useful architecture principle: keep mission progression independent from appearance detail. The project follows that separation through distinct Mission and Particles modules, although it does not implement wavelet synthesis.')
-p('Cook [3] studies sampling and aliasing in computer graphics and shows how sampling patterns influence visible artifacts. The relevant lesson here is that increased geometric detail alone cannot prevent shimmer. The application requests four-sample MSAA for ordinary window rendering and uses mipmapped minification for its concrete texture. These are distinct practical filters, not an implementation of Cook\'s stochastic ray-tracing method. Fixed-resolution video capture uses a single-sample target.')
+p('Cook [3] studies sampling and aliasing in computer graphics and shows how sampling patterns influence visible artifacts. The relevant lesson here is that increased geometric detail alone cannot prevent shimmer. The application requests four-sample MSAA for ordinary window rendering and uses mipmapped minification for its concrete texture. These are distinct practical filters, not an implementation of Cook\'s stochastic ray-tracing method. Video capture also renders with four-sample MSAA, then resolves to a texture before readback.')
 sub('Comparative assessment')
 p('Adaptive grids [8], hybrid vorticity [9] and wavelet detail [11] offer more physical or multiscale structure than independent billboards. Curl noise [10] offers procedural control with lower integration cost. The current implementation prioritizes understandable data flow and stable interaction, using at most 3,600 particles and two instanced particle draws. The research methods remain specific, testable directions for future improvement.')
 
@@ -191,9 +191,9 @@ new('5.2 Shading and texture sampling')
 eq('I = k_a C + Σ_j A_j L_j [C max(N · L,0) + k_s max(N · H,0)^s]')
 p('Here C is the surface color, H is the normalized sum of light and view directions, s is shininess, and A is point-light attenuation. Specular contribution is zero when the light lies behind the surface. The shader adds emission for selected lamps and applies a display gamma approximation after shading.')
 fig('wireframe.png','Fig. 3 Wireframe mode exposes indexed triangles in the scene',5.0)
-p('Figure 3 makes the tessellation and object arrangement visible. All project geometry is submitted through VAOs, vertex buffers and element buffers, with no fixed-function drawing calls.')
+p('Figure 3 exposes triangle topology. Wireframe mode draws unique edges with GL_LINES. Both modes use VAOs, vertex buffers and element buffers, with no fixed-function drawing calls.')
 fig('texture.png','Fig. 4 Repeating concrete UVs and procedural steppe detail',5.0)
-p('Figure 4 shows the concrete pad with a deterministic 256 by 256 RGB texture. The sampler repeats UVs, uses linear magnification and trilinear mipmapped minification. The steppe uses a separate low-frequency shader pattern. The concrete grid is a stylized material and does not preserve a fixed real-world slab size across differently scaled objects.')
+p('Figure 4 shows the concrete pad with a deterministic 1024 by 1024 RGB texture. The sampler repeats UVs, uses linear magnification and trilinear mipmapped minification. The steppe uses a separate low-frequency shader pattern. The concrete grid is a stylized material and does not preserve a fixed real-world slab size across differently scaled objects.')
 
 new('5.3 Particle animation and separation')
 fig('ignition.png','Fig. 5 Ignition combines fire, smoke and a moving engine light',5.5)
@@ -209,16 +209,16 @@ p('Hardware: Apple M1 with 8 GiB unified memory, macOS 26.3.1. Compiler: AppleCl
 rows=[]
 for r in metrics['runs']:rows.append((r['scene'],f"{r['mean_fps']:.1f}",f"{r['p95_ms']:.2f}",str(r['max_particles'])))
 table(['Scene','Mean FPS','p95 ms','Max particles'],rows,[2.4,1.3,1.2,1.6])
-p('These are local frame-loop throughput measurements, including CPU work and buffer swaps. They are not GPU-only timings and do not establish performance on the TA machine. The ready-scene run included a 57.9 ms frame outlier; these averages do not guarantee every frame meets the target. Raw CSV data and exact commands accompany the project. The final demonstration records the actual renderer at 1920 by 1080 with a visible FPS counter and no playback speed change.')
+p('These are local frame-loop throughput measurements, including CPU work and buffer swaps. They are not GPU-only timings and do not establish performance on the TA machine. Occasional frame outliers remain; these averages do not guarantee every frame meets the target. Raw CSV data and exact commands accompany the project. The edited demonstration uses 3840 by 2160 renderer captures, downsampled to 1920 by 1080 with a visible FPS counter and no playback speed change.')
 p('Static geometry and the concrete mip chain upload once. Particle rendering uses two instanced draws. The allocated instance buffer is 115,200 bytes (3,600 instances times 32 bytes). The particle pool is bounded; total process/GPU memory was not instrumented, so no unsupported total-memory figure is reported.')
 sub('6.3 Issues and debugging')
-p('Validation found a repeated GLAD implementation include, a high-FPS bias in the fire/smoke mix, overlapping help text, and an incompatible multisample framebuffer blit in video capture. Fixes isolated the loader definition, made the emission ordinal persistent, repositioned help, and used compatible single-sample capture/display targets. Scripted demo input is locked to avoid unrelated user input changing its timeline.')
+p('Validation found a repeated GLAD implementation include, a high-FPS bias in the fire/smoke mix, overlapping help text, and an incompatible multisample framebuffer blit in video capture. Fixes isolated the loader definition, made the emission ordinal persistent, repositioned help, and added a compatible multisample resolve before capture/display. Scripted demo input is locked to avoid unrelated user input changing its timeline.')
 
 new('7 Conclusion and Future Work')
 p('The project integrates a complete programmable graphics pipeline into an interactive launch scene. It demonstrates hierarchical modeling, per-fragment lighting, UV texture sampling, particle blending, camera control and real-time telemetry. All three Baikonur stretch features are implemented and appear in the demonstration. Automated simulation tests and local rendering checks support the implementation, while the final TA-machine and team defense checks remain separate responsibilities.')
 sub('7.1 Limitations')
 p('The animation follows a visual trajectory rather than a force-based rocket model. The site uses repeated primitives, the terrain is a large flat surface, and the sky is an artistic gradient. Smoke does not collide with the gantry or cast volumetric shadows. The current blend ordering uses particle-center distance, which is an approximation for overlapping billboards. At extreme altitude or camera distance, the finite terrain and long projection range can expose visual limits.')
-p('A long application stall is clamped to a 0.1-second simulation update, preventing a sudden visual jump at the cost of falling behind wall time during exceptional delays. MSAA improves ordinary window edges, while the recording target uses single-sample rendering. Performance varies with display synchronization, framebuffer size, capture and background load. The measurements here do not replace a fresh build and run on the actual assessment machine.')
+p('A long application stall is clamped to a 0.1-second simulation update, preventing a sudden visual jump at the cost of falling behind wall time during exceptional delays. Four-sample MSAA smooths edges in both the window and the recording. Retina rendering, dense curved meshes and a high-resolution TrueType font atlas improve sharpness. Performance varies with display synchronization, framebuffer size, capture and background load. The measurements here do not replace a fresh build and run on the actual assessment machine.')
 sub('7.2 Prioritized future work')
 p('The first graphics extension would be directional shadow mapping to anchor the rocket and gantry more convincingly. A second would replace independent smoke drift with a curl-noise velocity field [10] and depth-aware soft particles to improve intersections. A third would introduce a curved ground model and a physical atmosphere approximation based on [12]-[14]. These additions should be profiled individually before increasing visual complexity.')
 p('The strongest software improvements would be a more general scene-node representation, finer resource-error cleanup, and platform CI for Windows and Linux in addition to the tested Mac build. A structured user evaluation could measure whether observers can identify the major launch events and operate the controls without assistance. Each improvement should retain the project\'s central teaching purpose: making the graphics pipeline explainable.')

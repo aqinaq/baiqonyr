@@ -9,7 +9,7 @@ The deck has 10 slides and a suggested 8 minute 40 second talk. The demo is 3 mi
 | Ayaulym Talgat, SE2427 | 5–7 | 2:50 | Lighting, textures, fire/smoke and atmosphere |
 | Talant Altaikhan, SE2425 | 8–10 | 2:30 | Interaction, tests, measured performance, limitations |
 
-Every member must also understand the other modules. Read the report AI Use Note aloud if asked about authorship. Describe only contributions you actually made. Keep the source, Release executable, shaders and local demo available offline.
+Every member must also understand the other modules. Read the report AI Use Note aloud if asked about authorship. Describe only contributions you actually made. Keep the source, Release executable, shaders, assets and local demo available offline.
 
 ## Questions and concise explanations
 
