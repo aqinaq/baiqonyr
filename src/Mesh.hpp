@@ -14,6 +14,8 @@ struct Geometry {
 Geometry cube();
 Geometry cylinder(float top = 1.f, int segments = 96);
 Geometry sphere(int rings = 48, int segments = 96);
+Geometry kazakhstan();
+Geometry steppeRidges();
 class Mesh {
     GLuint vao = 0, vbo = 0, ebo = 0, edges = 0;
     GLsizei count = 0, edgeCount = 0;

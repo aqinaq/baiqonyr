@@ -13,12 +13,14 @@ struct Object {
     float shine = 32, emission = 0;
 };
 class Scene {
-    Mesh box{cube()}, tube{cylinder()}, cone{cylinder(0)}, ball{sphere()};
+    Mesh box{cube()}, tube{cylinder()}, cone{cylinder(0)}, ball{sphere()}, terrain{kazakhstan()};
+    Mesh rock{sphere(5, 8)}, scrub{cylinder(0, 6)}, pipe{cylinder(1, 12)}, ridges{steppeRidges()};
     Shader shader, sky;
     Texture concrete;
     GLuint skyVAO = 0;
     std::vector<Object> ground, rocketParts, boosterParts;
     void draw(const Object &o, const glm::mat4 &parent);
+    void buildEnvironment();
 
   public:
     bool lights = true, night = false, wireframe = false;

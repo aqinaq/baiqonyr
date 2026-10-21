@@ -13,7 +13,7 @@ Scene::Scene(const std::string &path)
     glGenVertexArrays(1, &skyVAO);
     glm::vec3 sand(.33, .26, .14), concreteColor(.48, .49, .46), steel(.095, .16, .18),
         orange(.8, .21, .055), white(.82, .85, .79), dark(.035, .055, .065);
-    ground.push_back(obj(0, {0, -.65f, 0}, {10000, 1, 10000}, sand, 2));
+    ground.push_back(obj(4, {0, 0, 0}, {1, 1, 1}, sand, 2));
     ground.push_back(obj(0, {0, -.05f, 0}, {42, .3f, 42}, concreteColor, 1));
     ground.push_back(obj(0, {0, .22f, 0}, {9, .4f, 9}, dark));
     ground.push_back(obj(0, {0, .1f, 90}, {12, .13f, 150}, {.12, .13, .13}, 1));
@@ -69,14 +69,7 @@ Scene::Scene(const std::string &path)
         ground.push_back(obj(1, p, {.08, 4, .08}, steel));
         ground.push_back(obj(3, p + glm::vec3(0, 2, 0), {.18, .18, .18}, orange, 0, 32, 1.5));
     }
-    // Distant low-poly ridges frame the steppe.
-    for (int i = 0; i < 28; i++) {
-        float a = i * 2 * pi / 28;
-        float r = 300 + (i % 4) * 60;
-        ground.push_back(obj(2, {std::cos(a) * r, 5, std::sin(a) * r},
-                             {50 + float(i % 3) * 20, 25 + float(i % 5) * 7, 70}, {.26, .24, .18},
-                             2));
-    }
+    buildEnvironment();
     // All rocket parts inherit the animated core transform.
     rocketParts.push_back(obj(1, {0, 8.2, 0}, {1.16, 12, 1.16}, white, 0, 90));
     rocketParts.push_back(obj(1, {0, 4, 0}, {1.18, 2.4, 1.18}, orange));
@@ -113,7 +106,7 @@ void Scene::draw(const Object &o, const glm::mat4 &parent) {
     shader.set("material", o.material);
     shader.set("shininess", o.shine);
     shader.set("emission", o.emission);
-    const Mesh *meshes[] = {&box, &tube, &cone, &ball};
+    const Mesh *meshes[] = {&box, &tube, &cone, &ball, &terrain, &rock, &scrub, &pipe, &ridges};
     meshes[o.mesh]->draw(wireframe);
 }
 void Scene::render(const Mission &m, Camera &camera, int width, int height, float realTime) {

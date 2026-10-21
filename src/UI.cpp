@@ -67,7 +67,7 @@ void directDemo(double t, Mission &m, Camera &c, Scene &s, Particles &p) {
         }
         if (stage == 4) {
             m.paused = true;
-            c.distance = 68;
+            c.distance = 110;
             c.pitch = -.35f;
         }
         if (stage == 6) {
@@ -86,7 +86,8 @@ void directDemo(double t, Mission &m, Camera &c, Scene &s, Particles &p) {
     if (stage == 2)
         s.wireframe = t < 55;
     if ((stage == 3 || stage == 6) && m.clock > 22) {
-        c.distance = std::min(78.f, 43.f + (m.clock - 22) * 4.f);
+        // Include falling boosters below the core, clear of the caption overlay.
+        c.distance = std::min(110.f, 55.f + (m.clock - 22) * 9.f);
         c.pitch = .12f - .47f * std::clamp((m.clock - 22) / 2.f, 0.f, 1.f);
     }
     if (t >= 198)
