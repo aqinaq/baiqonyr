@@ -7,11 +7,11 @@
   "runs": [
     {
       "scene": "Ready",
-      "mean_fps": 1068.3025639261534,
-      "p95_ms": 1.32471,
-      "min_fps": 37.39911588490048,
+      "mean_fps": 504.4041381315496,
+      "p95_ms": 3.93125,
+      "min_fps": 30.875442290710815,
       "max_particles": 0,
-      "samples": 10683,
+      "samples": 5044,
       "command": [
         "/Users/aruispan/CGF-final/build/baikonur",
         "--duration",
@@ -28,11 +28,11 @@
     },
     {
       "scene": "Ignition and ascent",
-      "mean_fps": 698.9981035482452,
-      "p95_ms": 2.43771,
-      "min_fps": 67.73369819218759,
-      "max_particles": 1398,
-      "samples": 6990,
+      "mean_fps": 477.62738821867976,
+      "p95_ms": 2.73467,
+      "min_fps": 10.238998707838363,
+      "max_particles": 1399,
+      "samples": 4777,
       "command": [
         "/Users/aruispan/CGF-final/build/baikonur",
         "--duration",
@@ -52,11 +52,11 @@
     },
     {
       "scene": "Separation and stars",
-      "mean_fps": 929.8907463782157,
-      "p95_ms": 1.757,
-      "min_fps": 103.41753589105583,
-      "max_particles": 1399,
-      "samples": 9299,
+      "mean_fps": 586.1536441953612,
+      "p95_ms": 2.14421,
+      "min_fps": 98.5338168059278,
+      "max_particles": 1398,
+      "samples": 5861,
       "command": [
         "/Users/aruispan/CGF-final/build/baikonur",
         "--duration",

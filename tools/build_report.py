@@ -11,7 +11,7 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
 root=Path(__file__).resolve().parents[1]
-parser=argparse.ArgumentParser();parser.add_argument('--template',default='/Users/aruispan/Downloads/Report template (2).docx');parser.add_argument('--submission-date',default='');args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--template',default='/Users/aruispan/Downloads/Report template (2).docx');parser.add_argument('--submission-date',default='To be confirmed');args=parser.parse_args()
 reference=Path(args.template);d=Document(reference)
 metrics=json.loads((root/'docs/evidence/metrics.json').read_text())
 refs=json.loads((root/'docs/references.json').read_text())
@@ -98,7 +98,8 @@ for line in [
 '7 Conclusion and Future Work ............................................. 14',
 '8 References ....................................................................... 15',
 '9 AI Use Note ..................................................................... 18',
-'Appendix A Course connections and defense ..................... 19']:
+'Appendix A Course connections and defense ..................... 19',
+'Appendix B Kazakhstan terrain .......................................... 20']:
  p(line)
 p('Deliverables',True)
 p('The accompanying source package contains the C++ application, GLSL shaders, bundled dependencies, tests, build instructions and evidence logs. The presentation contains ten slides. The captioned demonstration runs for 3 minutes 20 seconds at 1920 by 1080 pixels.')
@@ -126,7 +127,7 @@ p('These papers support a deliberate scope decision: maintain a clear and bounde
 new('2.2 Turbulence and rendering cost')
 p('Losasso, Gibou and Fedkiw [8] use an octree to concentrate simulation resolution where detail matters. This reduces the waste of uniformly fine grids but introduces adaptive data structures and pressure-solver complexity. The launch project has a different bottleneck and scale: a small, bounded particle set. It therefore shares geometry and batches particle rendering rather than allocating a fluid grid.')
 p('Selle, Rasmussen and Fedkiw [9] combine vortex particles with an Eulerian representation to recover turbulent detail that can be lost in grid-based advection. Their method treats particles as carriers of rotational flow information, whereas the project particles are independent visual elements. The distinction is important: the implemented smoke has plausible drift and expansion, but it does not preserve vorticity or satisfy incompressible flow equations.')
-p('Bridson, Hourihan and Nordenstam [10] derive procedural velocity fields using curl noise, enabling incompressible turbulent motion and boundary-aware behavior without a full simulation. This offers a closer extension path for the current application than an adaptive fluid solver. A future version could replace the simple outward smoke velocity with a curl-noise field. The current release does not label its sinusoidal ground pattern or random particle velocities as curl noise.')
+p('Bridson, Hourihan and Nordenstam [10] derive procedural velocity fields using curl noise, enabling incompressible turbulent motion and boundary-aware behavior without a full simulation. This offers a closer extension path for the current application than an adaptive fluid solver. A future version could replace the simple outward smoke velocity with a curl-noise field. The current release does not label its value-noise ground pattern or random particle velocities as curl noise.')
 p('Kim and colleagues [11] separate large-scale motion from high-frequency turbulence using wavelets. This separation helps artists add detail without recomputing every aspect of the base flow. It also suggests a useful architecture principle: keep mission progression independent from appearance detail. The project follows that separation through distinct Mission and Particles modules, although it does not implement wavelet synthesis.')
 p('Cook [3] studies sampling and aliasing in computer graphics and shows how sampling patterns influence visible artifacts. The relevant lesson here is that increased geometric detail alone cannot prevent shimmer. The application requests four-sample MSAA for ordinary window rendering and uses mipmapped minification for its concrete texture. These are distinct practical filters, not an implementation of Cook\'s stochastic ray-tracing method. Video capture also renders with four-sample MSAA, then resolves to a texture before readback.')
 sub('Comparative assessment')
@@ -134,7 +135,7 @@ p('Adaptive grids [8], hybrid vorticity [9] and wavelet detail [11] offer more p
 
 new('2.3 Materials and atmospheric appearance')
 p('Cook and Torrance [2] describe a reflectance model that accounts for material-dependent angular behavior. Compared with that microfacet approach, Blinn-Phong offers a smaller set of terms that directly matches the course assessment: ambient, diffuse and specular. The project uses the latter and assigns different shininess values to metal-like rocket parts and matte structures. It does not claim physically based material calibration or energy conservation.')
-p('Perlin [4] improves the construction of procedural noise, while Lagae and colleagues [15] compare noise families, filtering and their uses in graphics. These works explain why continuity and frequency content matter when procedural patterns are sampled. The implementation uses an original low-frequency trigonometric steppe pattern and a deterministic random concrete image. Neither is described as Perlin noise. More sophisticated noise would improve the natural appearance of the terrain and smoke.')
+p('Perlin [4] improves the construction of procedural noise, while Lagae and colleagues [15] compare noise families, filtering and their uses in graphics. These works explain why continuity and frequency content matter when procedural patterns are sampled. The implementation uses an original interpolated value-noise steppe pattern and a deterministic random concrete image. Neither is described as Perlin noise. More sophisticated noise would improve the natural appearance of the terrain and smoke.')
 p('Bruneton and Neyret [12] precompute atmospheric scattering so a renderer can evaluate views from the ground to space efficiently. This approach relates appearance to physical scattering and viewing geometry. The application uses a much simpler blend between a warm horizon and a dark sky as the rocket gains altitude. It meets the visual transition required by the topic, but it cannot reproduce physically correct aerial perspective, planetary shadows or multiple scattering.')
 p('Hosek and Wilkie [13] fit an analytic spectral sky model that improves important daylight conditions, including sunsets. Its compact evaluation makes it relevant to real-time graphics, but it targets a more principled radiance distribution than the project\'s artistic gradient. Hillaire [14] addresses scalable atmosphere rendering with compact lookup-table parameterizations and a multiple-scattering approximation. That method is a stronger future option for continuous ground-to-space views.')
 sub('Synthesis and source quality')
@@ -147,7 +148,7 @@ sub('3.2 Problem statement')
 p('The central problem is coordinating multiple representations in one frame. Rocket parts require consistent parent transforms, smoke requires transparency ordering, lighting requires normals in the correct coordinate space, and the camera must follow an object whose position changes continuously. These systems must remain synchronized when the user pauses, changes playback speed or resets the mission.')
 sub('3.3 Scope')
 table(['Area','Implemented behavior'],[
-('Scene','Steppe, pad, flame trench, gantry, rocket, four boosters, buildings, tanks, radome, roads and lights.'),
+('Scene','Kazakhstan terrain, pad, gantry, rocket, four boosters, hangar, tanks, radome, service vehicles, railway and steppe scenery.'),
 ('Mission','Eight-second countdown, ignition at T-2, liftoff at T+0, automatic separation at T+24, manual separation after T+5.'),
 ('Graphics','Indexed meshes, original GLSL, inverse-transpose normals, three light contributions, mipmapped concrete and procedural sky.'),
 ('Interaction','Keyboard and mouse orbit, zoom, chase mode, pause, reset, speed control, light/night toggles, wireframe and screenshots.'),
@@ -161,7 +162,7 @@ table(['Module','Responsibility'],[
 ('main','Window/context, input, elapsed time, render order, capture and frame logs.'),
 ('Shader / Mesh / Texture','Compile and link GLSL, own VAO/VBO/EBO resources, upload geometry once, generate the concrete texture and mip chain.'),
 ('Mission / Camera','Mission state, altitude, booster transforms, orbit/chase viewing and ignition shake.'),
-('Scene / Particles','Static scene and rocket hierarchy; particle lifetime updates and instanced billboard passes.'),
+('Scene / Particles','Terrain and scenery, rocket hierarchy, particle lifetime updates and instanced billboard passes.'),
 ('UI / RenderTarget','Controls, telemetry and captions; fixed-resolution recording target displayed in the application window.')],[1.6,4.9])
 sub('4.2 Development process')
 p('Development proceeded through a buildable pipeline, primitive geometry, mission transforms, lighting and textures, particles, interaction, visual validation and documentation. Automated tests isolate the simulation from the graphics context. Render captures check behavior that numerical tests cannot establish, including transparency, camera composition and UI placement.')
@@ -183,7 +184,7 @@ p('The frame order is sky, opaque geometry, sorted smoke, additive fire and UI. 
 new('5 Graphics and Rendering')
 sub('5.1 Scene construction and lighting')
 fig('day.png','Fig. 1 Launch complex with procedural geometry and live telemetry',5.5)
-p('Figure 1 shows the shared primitive meshes assembled into distinct scene objects. The rocket transform parents the body, nose, bands and boosters. The orange gantry bracing and turquoise vehicle panels establish a consistent palette.')
+p('Figure 1 shows the rocket and gantry beside the ribbed hangar, fuel farm, pipework, vehicles and railway. Shared primitive meshes form these objects. Kazakhstan terrain uses a projected Natural Earth boundary with concave triangulation and solid side walls (Appendix B).')
 fig('night.png','Fig. 2 Night lighting with the toggled gantry point light',5.5)
 p('Figure 2 shows the scene under a different lighting mode. The renderer combines a directional sun, a blue gantry point light and an orange engine point light. The engine light follows the rocket during ascent.')
 
@@ -203,13 +204,13 @@ p('Figure 6 shows the topic\'s final visual event. The shader blends the warm sk
 
 new('6 Testing and Evaluation')
 sub('6.1 Testing methodology')
-p('CTest runs a standalone simulation test executable. It checks grounded idle state, ignition timing, pause, ascent, separation continuity, outward booster motion, equivalent progression at 30 and 60 updates per second, reset, rejection of premature separation, automatic separation, bounded atmosphere values and finite booster transforms. The automated suite passes. Rendering tests compile every shader and check OpenGL errors after each frame. No independent student user study has been conducted.')
+p('CTest passes both mission_invariants and kazakhstan_terrain. Mission checks cover ignition, pause/reset, ascent, separation continuity and equivalent progression at different update rates. Terrain checks cover valid indices, outward winding, nondegenerate faces, triangulation area and launch-site containment. Rendering checks compile shaders and inspect OpenGL errors. No independent student user study has been conducted.')
 sub('6.2 Performance evaluation')
 p('Hardware: Apple M1 with 8 GiB unified memory, macOS 26.3.1. Compiler: AppleClang 21.0.0. Release build, OpenGL 4.1 Metal driver 90.5. Measurements below use 1280 by 720, four-sample window MSAA, VSync disabled and no recording. Each 12-second run excludes its first two seconds. Mean FPS is sample count divided by the sum of measured frame times; p95 reports the 95th percentile frame time.')
 rows=[]
 for r in metrics['runs']:rows.append((r['scene'],f"{r['mean_fps']:.1f}",f"{r['p95_ms']:.2f}",str(r['max_particles'])))
 table(['Scene','Mean FPS','p95 ms','Max particles'],rows,[2.4,1.3,1.2,1.6])
-p('These are local frame-loop throughput measurements, including CPU work and buffer swaps. They are not GPU-only timings and do not establish performance on the TA machine. Occasional frame outliers remain; these averages do not guarantee every frame meets the target. Raw CSV data and exact commands accompany the project. The edited demonstration uses 3840 by 2160 renderer captures, downsampled to 1920 by 1080 with a visible FPS counter and no playback speed change.')
+p('These are local frame-loop throughput measurements, including CPU work and buffer swaps. They are not GPU-only timings and do not establish performance on the TA machine. Occasional frame outliers remain; these averages do not guarantee every frame meets the target. Raw CSV data and exact commands accompany the project. The refreshed demonstration records the current scene at native 1920 by 1080 with a visible FPS counter and no playback speed change.')
 p('Static geometry and the concrete mip chain upload once. Particle rendering uses two instanced draws. The allocated instance buffer is 115,200 bytes (3,600 instances times 32 bytes). The particle pool is bounded; total process/GPU memory was not instrumented, so no unsupported total-memory figure is reported.')
 sub('6.3 Issues and debugging')
 p('Validation found a repeated GLAD implementation include, a high-FPS bias in the fire/smoke mix, overlapping help text, and an incompatible multisample framebuffer blit in video capture. Fixes isolated the loader definition, made the emission ordinal persistent, repositioned help, and added a compatible multisample resolve before capture/display. Scripted demo input is locked to avoid unrelated user input changing its timeline.')
@@ -217,11 +218,11 @@ p('Validation found a repeated GLAD implementation include, a high-FPS bias in t
 new('7 Conclusion and Future Work')
 p('The project integrates a complete programmable graphics pipeline into an interactive launch scene. It demonstrates hierarchical modeling, per-fragment lighting, UV texture sampling, particle blending, camera control and real-time telemetry. All three Baikonur stretch features are implemented and appear in the demonstration. Automated simulation tests and local rendering checks support the implementation, while the final TA-machine and team defense checks remain separate responsibilities.')
 sub('7.1 Limitations')
-p('The animation follows a visual trajectory rather than a force-based rocket model. The site uses repeated primitives, the terrain is a large flat surface, and the sky is an artistic gradient. Smoke does not collide with the gantry or cast volumetric shadows. The current blend ordering uses particle-center distance, which is an approximation for overlapping billboards. At extreme altitude or camera distance, the finite terrain and long projection range can expose visual limits.')
+p('The animation follows a visual trajectory rather than a force-based rocket model. The site uses repeated primitives, the terrain follows a simplified national boundary with a flat top, and the sky is an artistic gradient. Smoke does not collide with the gantry or cast volumetric shadows. The current blend ordering uses particle-center distance, which is an approximation for overlapping billboards. At extreme altitude or camera distance, the finite terrain and long projection range can expose visual limits.')
 p('A long application stall is clamped to a 0.1-second simulation update, preventing a sudden visual jump at the cost of falling behind wall time during exceptional delays. Four-sample MSAA smooths edges in both the window and the recording. Retina rendering, dense curved meshes and a high-resolution TrueType font atlas improve sharpness. Performance varies with display synchronization, framebuffer size, capture and background load. The measurements here do not replace a fresh build and run on the actual assessment machine.')
 sub('7.2 Prioritized future work')
 p('The first graphics extension would be directional shadow mapping to anchor the rocket and gantry more convincingly. A second would replace independent smoke drift with a curl-noise velocity field [10] and depth-aware soft particles to improve intersections. A third would introduce a curved ground model and a physical atmosphere approximation based on [12]-[14]. These additions should be profiled individually before increasing visual complexity.')
-p('The strongest software improvements would be a more general scene-node representation, finer resource-error cleanup, and platform CI for Windows and Linux in addition to the tested Mac build. A structured user evaluation could measure whether observers can identify the major launch events and operate the controls without assistance. Each improvement should retain the project\'s central teaching purpose: making the graphics pipeline explainable.')
+p('The strongest software improvements would be a more general scene-node representation, finer resource-error cleanup, and desktop rendering checks on Windows and Linux. A GitHub Actions matrix is configured for builds and numerical tests on all three platforms; its first hosted run is pending. A structured user evaluation could measure whether observers can identify the major launch events and operate the controls without assistance. Each improvement should retain the project\'s central teaching purpose: making the graphics pipeline explainable.')
 
 new('8 References')
 p('Journal articles use IEEE-style numbering. DOI records identify the journal versions; conference-associated journal issues are not counted twice.')
@@ -239,10 +240,10 @@ p('Library credits and license locations: GLFW, zlib/libpng; GLAD, MIT and Khron
 new('9 AI Use Note')
 p('OpenAI Codex provided substantial assistance in producing this project. It generated the initial C++ application, original procedural geometry and textures, GLSL shaders, simulation tests, build files, documentation, literature-review prose, report and presentation. It also assisted with compiling, debugging, searching and verifying references, measuring performance, and recording the demonstration.')
 p('The user selected the Baikonur theme, supplied the assignment documents and course lectures, and provided the four team members\' names and groups. At preparation time, the team has not yet confirmed individual source changes, independent verification or actual module contributions. The package therefore does not attribute the generated implementation to particular students or claim a history of student commits.')
-p('AI-assisted revisions made during validation included fixing the GLAD definition scope, correcting the emission ratio at high frame rates, moving the controls help to avoid overlap, separating fixed-resolution recording from window size, correcting framebuffer sample compatibility, and locking the scripted demo against unrelated input. These changes were followed by the automated and rendering checks reported in Section 6.')
+p('AI-assisted revisions made during validation included fixing the GLAD definition scope, correcting the emission ratio at high frame rates, moving the controls help to avoid overlap, separating fixed-resolution recording from window size, correcting framebuffer sample compatibility, and locking the scripted demo against unrelated input. Later revisions added Kazakhstan terrain, scenery, terrain tests, refreshed evidence and a platform build workflow. These changes were followed by the automated and rendering checks reported in Section 6.')
 p('Before submitting, the team must review the implementation, test it using the course setup, confirm or revise the explanations, and record its own substantive changes and responsibilities. Each member must be able to explain the whole pipeline and the mathematics relevant to their presentation. Any further AI-assisted modifications should be added to this note and the README with the specific work performed and how the team checked it.')
 sub('Asset and source provenance')
-p('Geometry, visual textures, shader effects and screenshots originate in the project. The report preserves the university logo from the supplied template. Scholarly papers informed comparisons and design reasoning; their advanced algorithms are not presented as implemented features. The source package retains library license files. The video contains real-time rendered application output with in-application captions and telemetry, encoded without speed alteration.')
+p('Procedural geometry, textures, shaders and screenshots originate in the project. The terrain boundary derives from Natural Earth v5.1.2 public-domain map data, credited in Appendix B and CREDITS.md. The report preserves the university logo from the supplied template. Scholarly papers informed comparisons and design reasoning; their advanced algorithms are not presented as implemented features. The source package retains library license files. The video contains real-time rendered application output with in-application captions and telemetry, encoded without speed alteration.')
 
 new('Appendix A Course connections and defense')
 table(['Course topic','Project connection'],[
@@ -256,7 +257,14 @@ p('The references above use PDF page numbers. Course materials supplement the fi
 sub('Suggested presentation allocation')
 p('Akbope Bakytkeldy (SE2426): slides 1-2, scope and requirements. Moldir Omar (SE2426): slides 3-4, pipeline and hierarchy. Ayaulym Talgat (SE2427): slides 5-7, shading and effects. Talant Altaikhan (SE2425): slides 8-10, interaction, tests and conclusions. This is a proposed speaking plan, not an assertion of completed development contributions.')
 sub('Submission status')
-p('The defense and submission dates remain to be confirmed. The team must verify topic registration, provide its hosted repository, add the TA, maintain genuine member commits, tag the actual submission revision v1.0, and upload the report PDF, slide deck and demo. The submission deadline is three days before defense at 23:59 Asia/Almaty. The local package cannot establish account-based submission or individual oral understanding.')
+p('The defense and submission dates remain to be confirmed. The team must verify topic registration, confirm TA access to github.com/aqinaq/baiqonyr, maintain genuine member commits, tag the actual submission revision v1.0, and upload the report PDF, slide deck and demo. The submission deadline is three days before defense at 23:59 Asia/Almaty. The local package cannot establish account-based submission or individual oral understanding.')
+
+new('Appendix B Kazakhstan terrain')
+fig('kazakhstan-map.png','Fig. 7 Kazakhstan outline viewed from high altitude',6.35)
+p('The terrain uses the Kazakhstan boundary from Natural Earth v5.1.2 at 1:110m scale. An equirectangular projection at 48 degrees north maps east to +X and north to -Z. The approximate Baikonur launch area at 63.34 degrees east and 45.92 degrees north becomes the scene origin. The country is scaled to 10,000 scene units wide.')
+p('Ear clipping triangulates the concave outline without filling across its indentations. Reversed bottom triangles and side quads close the mesh into a shallow solid. Tests compare triangle area with polygon area, inspect winding and verify that the launch complex lies inside the boundary. The baked header and original GeoJSON are bundled, so rebuilding does not download map data.')
+p('The launch-site details include a ribbed hangar, pipework, vehicles, railway, cables, scrub and rocks. They are stylized procedural scenery. The country outline is a display map with a flat top, not a measured elevation model or a reconstruction of the real launch facility.')
+p('Map source and license: Natural Earth contributors, Admin 0 Countries, v5.1.2, public domain. https://github.com/nvkelso/natural-earth-vector/tree/v5.1.2/geojson and https://www.naturalearthdata.com/about/terms-of-use/ . See CREDITS.md for the exact source file.')
 
 # Save authoring output, then preserve every original opaque ZIP part exactly.
 tmp=root/'tmp/report-authored.docx';d.save(tmp)
@@ -270,4 +278,4 @@ with zipfile.ZipFile(reference) as original,zipfile.ZipFile(final) as output:
  assert all(original.read(n)==output.read(n) for n in original.namelist() if n not in editable)
  assert Document(reference).sections[0]._sectPr.xml==Document(final).sections[0]._sectPr.xml
 print(final)
-print('Expected pages: 19. Preserved original package parts outside editable slots.')
+print('Expected pages: 20. Preserved original package parts outside editable slots.')

@@ -1,6 +1,10 @@
 # Credits and licenses
 
-All geometry, the concrete texture, procedural steppe/sky/stars, GLSL scene and particle shaders, mission logic, and camera implementation were authored for this project with OpenAI Codex assistance. No third-party model, photo texture, shader snippet, audio, or tutorial code was copied into application source.
+The mesh construction, concrete texture, procedural steppe/sky/stars, GLSL scene and particle shaders, mission logic, and camera implementation were authored for this project with OpenAI Codex assistance. Kazakhstan's terrain outline is derived from the public-domain map data credited below. No third-party 3D model, photo texture, shader snippet, audio, or tutorial code was copied into application source.
+
+## Kazakhstan terrain boundary
+
+`assets/maps/kazakhstan.geojson` contains the Kazakhstan polygon from [Natural Earth v5.1.2, 1:110m Admin 0 Countries](https://github.com/nvkelso/natural-earth-vector/blob/v5.1.2/geojson/ne_110m_admin_0_countries.geojson), [public-domain map data](https://www.naturalearthdata.com/about/terms-of-use/). `tools/generate_kazakhstan.py` projects the coordinates at 48° N, centres the launch area at approximately 63.34° E, 45.92° N, scales the country to 10,000 scene units wide, and ear-clips the concave outline into `src/KazakhstanBoundary.hpp`. This is a simplified display map, with a stylized 60-unit-deep base, not a terrain elevation dataset.
 
 | Dependency | Author / project | Version / source | License retained |
 |---|---|---|---|
@@ -20,7 +24,7 @@ The supplied course lectures include material credited on their slides to E. Ang
 
 ## Deliverable tooling
 
-The report uses the supplied course template. The presentation uses actual project captures. The MP4 is a real-time framebuffer capture of the application, with the same image displayed in its window, encoded by FFmpeg 7.1 via the imageio-ffmpeg distribution. FFmpeg and temporary authoring tools are not runtime dependencies and are not included in the source archive. Captions are drawn by the application; the video has no music or voice-over. The quality revision captures natively at 3840x2160 with four-sample MSAA. The final demo joins actual capture segments from two takes, with cuts at 45 and 55 seconds to include the optimized wireframe mode. The final paused image is held briefly to complete 200 seconds. No footage is sped up or motion-interpolated. A Lanczos downsampling and H.264 compression pass produces the 1920x1080 submission video while retaining the 200-second duration and 30 FPS timeline.
+The report uses the supplied course template. The presentation uses actual project captures. The MP4 is a real-time framebuffer capture of the application, with the same image displayed in its window, encoded by FFmpeg 7.1 via the imageio-ffmpeg distribution. FFmpeg and temporary authoring tools are not runtime dependencies and are not included in the source archive. Captions are drawn by the application; the video has no music or voice-over. The refreshed submission records the current application in one continuous native 1920x1080 take with four-sample MSAA and a visible FPS counter. H.264 compression retains the wall-clock timeline at 30 FPS. No footage is sped up or motion-interpolated. Any sub-frame ending adjustment holds the already-paused final image to reach exactly 200 seconds. Capture metadata is recorded in `docs/evidence/capture-edit.json`.
 
 ## AI Use
 

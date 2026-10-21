@@ -29,10 +29,12 @@ Every member must also understand the other modules. Read the report AI Use Note
 - **What do the FPS values mean?** They are measured frame-loop throughput, not an isolated GPU timer. VSync, capture and hardware affect them. The TA must repeat the exact 1280x720 test.
 - **What is missing?** Physical flight/combustion, shadows, Earth curvature, high-order smoke simulation and validated user studies. These are future work rather than claimed features.
 
+- **How is the country outline built?** A bundled public-domain Natural Earth polygon is projected around Baikonur and scaled to 10,000 units wide. Ear clipping respects its concave boundary. Top, bottom and side triangles close the mesh. Tests check winding, area and launch-site containment.
+
 ## Live demonstration fallback
 
 Build using README, run, orbit with drag or WASD, toggle L and N, toggle F, press Space, enable C, wait for T+24 separation, pause with P, orbit around the frozen formation, then R. If the video fails, this covers the same core features live.
 
 ## Team actions before submission
 
-Confirm names/capitalization, actual contributions, course build setup and defense date. Register the topic if not already approved. Create the hosted repository, add the TA, make genuine member commits while reviewing and improving the project, and tag the actual submission revision `v1.0`. Do not fabricate backdated history. Upload the four deliverables three days before defense, by 23:59 Asia/Almaty. These account-based and personal actions are not performed by this package.
+Confirm names/capitalization, actual contributions, course build setup and defense date. Register the topic if not already approved. Use https://github.com/aqinaq/baiqonyr, confirm TA access, make genuine member commits while reviewing and improving the project, and tag the actual submission revision `v1.0`. Do not fabricate backdated history. Upload the four deliverables three days before defense, by 23:59 Asia/Almaty. These account-based and personal actions are not performed by this package.

@@ -7,7 +7,7 @@ root = Path(__file__).resolve().parents[1]
 out = root / 'output'
 source = out / 'Baikonur_Source.zip'
 roots = ['CMakeLists.txt', 'README.md', 'CREDITS.md', '.gitignore', '.clang-format',
-         'run.command', 'src', 'assets', 'shaders', 'tests', 'vendor', 'tools', 'docs']
+         'run.command', '.github', 'src', 'assets', 'shaders', 'tests', 'vendor', 'tools', 'docs']
 with zipfile.ZipFile(source, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as z:
     for name in roots:
         target = root / name
@@ -21,10 +21,20 @@ with zipfile.ZipFile(source) as z:
     assert 'Baikonur_Source/vendor/glfw/deps/glad/gl.h' in z.namelist()
     assert 'Baikonur_Source/assets/fonts/Roboto-Medium.ttf' in z.namelist()
     assert 'Baikonur_Source/assets/fonts/LICENSE-Roboto.txt' in z.namelist()
+    for name in ['src/Kazakhstan.cpp', 'src/Environment.cpp', 'assets/maps/kazakhstan.geojson',
+                 'tests/terrain_tests.cpp', '.github/workflows/build.yml']:
+        assert z.read('Baikonur_Source/' + name) == (root / name).read_bytes()
+    for name in z.namelist():
+        relative = Path(name).relative_to('Baikonur_Source')
+        if str(relative) != 'output/.gitkeep':
+            assert z.read(name) == (root / relative).read_bytes(), f'Stale archive member: {name}'
     assert not any('/build/' in n or '/tmp/' in n or '/.git/' in n for n in z.namelist())
 
 files = [source, out / 'Baikonur_Report.docx', out / 'pdf/Baikonur_Report.pdf',
          out / 'Baikonur_Presentation.pptx', out / 'Baikonur_Demo_1080p.mp4']
+backup = out / 'Baikonur_macOS_AppleSilicon.zip'
+if backup.exists():
+    files.append(backup)
 manifest = '\n'.join(hashlib.sha256(f.read_bytes()).hexdigest() + '  ' + f.name for f in files) + '\n'
 (out / 'SHA256SUMS.txt').write_text(manifest)
 with zipfile.ZipFile(out / 'Baikonur_Submission_Package.zip', 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as z:

@@ -1,7 +1,7 @@
 {
   "source_resolution": [
-    3840,
-    2160
+    1920,
+    1080
   ],
   "output_resolution": [
     1920,
@@ -9,46 +9,9 @@
   ],
   "output_fps": 30,
   "output_seconds": 200,
-  "encoder": "FFmpeg VideoToolbox H.264 at 50 Mbps, final libx264 CRF 18",
-  "segments": [
-    {
-      "output_seconds": [
-        0,
-        45
-      ],
-      "source_take": "demo.log",
-      "source_seconds": [
-        0,
-        45
-      ]
-    },
-    {
-      "output_seconds": [
-        45,
-        55
-      ],
-      "source_take": "demo-wireframe-take.log",
-      "source_seconds": [
-        45,
-        55
-      ]
-    },
-    {
-      "output_seconds": [
-        55,
-        200
-      ],
-      "source_take": "demo.log",
-      "source_seconds": [
-        55,
-        199.7
-      ],
-      "ending": "Hold final paused image for approximately 0.3 seconds"
-    }
-  ],
-  "wireframe_4k_segment": {
-    "mean_fps": 63.27677597417931,
-    "p95_ms": 37.8905
-  },
-  "speed_changes": false
+  "source": "one continuous capture of current terrain and scenery",
+  "encoder": "VideoToolbox H.264 master; libx264 CRF 18 delivery",
+  "speed_changes": false,
+  "ending": "At most 0.1 seconds of the paused final frame held to reach 200 seconds",
+  "capture_log": "demo.log"
 }

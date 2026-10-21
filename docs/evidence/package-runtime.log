@@ -1,0 +1,4 @@
+GPU: Apple M1
+OpenGL: 4.1 Metal - 90.5
+Screenshot: tmp/final-refresh/preview-current.ppm
+Frames: 570 Mean FPS: 569.502 p95 ms: 4.07075 GL errors: 0

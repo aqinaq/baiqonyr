@@ -26,7 +26,7 @@ ctest --test-dir build -C Release --output-on-failure
 .\build\Release\baikonur.exe
 ```
 
-macOS requires Xcode Command Line Tools. Linux uses GLFW's X11 backend, requiring the usual compiler, X11, Xrandr, Xinerama, Xcursor, Xi and OpenGL development headers. On Ubuntu these are provided by `build-essential cmake xorg-dev libgl1-mesa-dev`. They are system prerequisites; all project libraries are bundled. Confirm compatibility with the course assignment setup before submission. Windows/Linux commands have not been executed in this workspace.
+macOS requires Xcode Command Line Tools. Linux uses GLFW's X11 backend, requiring the usual compiler, X11, Xrandr, Xinerama, Xcursor, Xi and OpenGL development headers. On Ubuntu these are provided by `build-essential cmake xorg-dev libgl1-mesa-dev`. They are system prerequisites; all project libraries are bundled. Confirm compatibility with the course assignment setup before submission. Windows/Linux commands have not been executed locally. The repository includes a GitHub Actions build/test matrix for Windows, macOS and Linux; its first hosted run is pending publication.
 
 The build copies `shaders/` and `assets/` beside the executable. Keep both folders with the executable if moving it. These folders are also accepted from the working directory. Run from a writable directory for screenshots. Context-creation errors usually require checking the graphics driver/OpenGL support or the desktop session.
 
@@ -57,6 +57,8 @@ Camera movement remains available while paused. Input over the control panel bel
 ## Features and source layout
 
 - Indexed procedural cubes, cylinders, cones and spheres form the pad, rocket, boosters, gantry, buildings, tanks, radome, roads and lights.
+- The terrain follows Kazakhstan's outline, using a bundled Natural Earth boundary, concave triangulation and solid side walls. North is -Z, east is +X, and the launch pad sits at the projected Baikonur location. The country is scaled to 10,000 scene units wide; its full outline becomes visible from high altitude. `python3 tools/generate_kazakhstan.py` regenerates the baked boundary without downloads.
+- The launch-site background includes a ribbed assembly hangar, fuel farm and pipework, lattice communications mast, service vehicles, containers, railway, fencing and utility cables. Sparse steppe scrub, stones, irregular ridges, mottled ground and drifting clouds add detail before liftoff. These are stylized procedural scenery, not a reconstruction of the actual facility.
 - Explicit MVP matrices and parent/child transforms; boosters detach in world space with continuous position and initial vertical velocity.
 - Own per-fragment Blinn-Phong GLSL, inverse-transpose normals, directional sun, toggled gantry light and moving engine light.
 - Concrete texture with UVs, repeat wrapping and mipmaps; procedural ground and sky.
@@ -77,7 +79,7 @@ Camera movement remains available while paused. Input over the control panel bel
 
 CSV output excludes the first two seconds. `python3 tools/benchmark.py` repeats these tests and updates `docs/evidence/metrics.json` and raw evidence; it expects the single-configuration `build/baikonur` path. Windows users can run the commands directly with their executable path. Close GPU-heavy work before measuring.
 
-Local 720p mean frame-loop throughput: 1068.3 FPS ready, 699.0 FPS ignition/ascent, 929.9 FPS separation/stars. Respective p95 frame times: 1.32, 2.44, 1.76 ms. Occasional frame outliers remain; averages do not guarantee every frame meets the target. These are CPU frame-loop measurements including swaps, not GPU-only timings. TA-machine performance still requires verification.
+Local 720p mean frame-loop throughput for the current terrain/scenery: 504.4 FPS ready, 477.6 FPS ignition/ascent, 586.2 FPS separation/stars. Respective p95 frame times: 3.93, 2.73, 2.14 ms. Occasional frame outliers remain; averages do not guarantee every frame meets the target. These are CPU frame-loop measurements including swaps, not GPU-only timings. TA-machine performance still requires verification.
 
 Replay the captioned 200-second sequence:
 
@@ -93,7 +95,7 @@ Optional recording requires an external FFmpeg encoder. **FFmpeg is not needed t
 
 Retina rendering is enabled by default. Use `--no-retina` for a physical 1280x720 benchmark on macOS. Both window rendering and recording use four-sample MSAA. Curved meshes have finer tessellation, the concrete texture is 1024x1024 with mipmaps, and bundled Roboto text uses a high-resolution font atlas. Keep both `assets/` and `shaders/` beside the executable; CMake copies them automatically.
 
-Recording captures the actual framebuffer at the requested resolution and 30 FPS, without playback speed alteration. The submitted 1080p demo is downsampled from native 3840x2160 capture segments for smoother fine detail. Two takes are joined at 45 and 55 seconds, retaining the updated wireframe demonstration and the complete launch; see CREDITS.md. To capture native 4K, use `--width 3840 --height 2160`; recording requires more GPU and encoding throughput. For recording, `--no-vsync` avoids limiting throughput to display refresh intervals. On macOS, `--hardware-encode` selects FFmpeg VideoToolbox H.264 at 50 Mbps to reduce CPU encoding load. The default remains portable software H.264. Manual input is locked only in `--demo`. See `./build/baikonur --help` for other options.
+Recording captures the actual framebuffer at the requested resolution and 30 FPS, without playback speed alteration. The refreshed demo records the current terrain and scenery in one continuous native 1920x1080 take. Captions and FPS are rendered by the application; see CREDITS.md. To capture native 4K, use `--width 3840 --height 2160`; recording requires more GPU and encoding throughput. For recording, `--no-vsync` avoids limiting throughput to display refresh intervals. On macOS, `--hardware-encode` selects FFmpeg VideoToolbox H.264 at 50 Mbps to reduce CPU encoding load. The default remains portable software H.264. Manual input is locked only in `--demo`. See `./build/baikonur --help` for other options.
 
 ## Team
 
@@ -114,4 +116,6 @@ AI-assisted validation fixed GLAD definition scope, particle emission ratio at h
 
 ## Submission
 
-The package includes source, template-based report DOCX/PDF, ten-slide PPTX with notes, and a 3:20 captioned 1080p demo. Complete the external/personal items in the checklist: topic approval, actual member contributions and commits, hosted repository/TA access, `v1.0` tag on the actual submission revision, dates, TA-machine checks and Moodle upload. Deadline: three days before defense at 23:59 Asia/Almaty. This package does not establish those actions or guarantee a grade.
+The package includes source, template-based report DOCX/PDF, ten-slide PPTX with notes, and a 3:20 captioned 1080p demo. Complete the external/personal items in the checklist: topic approval, actual member contributions and commits, TA access to [the repository](https://github.com/aqinaq/baiqonyr), `v1.0` tag on the actual submission revision, dates, TA-machine checks and Moodle upload. Deadline: three days before defense at 23:59 Asia/Almaty. This package does not establish those actions or guarantee a grade.
+
+The current refresh passes both `mission_invariants` and `kazakhstan_terrain`. The source ZIP includes the current terrain/scenery files and is checked byte-for-byte against the workspace. See `docs/evidence/validation.json` for the latest verification record.
