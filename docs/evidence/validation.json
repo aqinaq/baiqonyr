@@ -15,7 +15,17 @@
   "pptx_sha256": "d89de711d236630a664a8bc5fdb627f485f0e924cd9ee96dbee5abd2ecab2d1b",
   "manual_input": "Code reviewed; native app unavailable to UI automation. Team must exercise keyboard/mouse controls on course machine.",
   "target_machine": "TA machine unavailable; local averages do not establish stable TA-machine frame rate. Occasional local frame-time outliers disclosed.",
-  "hosted_ci": "Workflow configured for Linux/macOS/Windows; first hosted run pending publication",
+  "hosted_ci": {
+    "checked_on": "2026-10-22",
+    "conclusion": "success",
+    "tested_commit": "3a86b8fe3cbe01bfc0179314971a389e408c6c3c",
+    "url": "https://github.com/aqinaq/baiqonyr/actions/runs/39724116302",
+    "jobs": {
+      "build (windows-latest)": "success",
+      "build (macos-latest)": "success",
+      "build (ubuntu-latest)": "success"
+    }
+  },
   "final_demo_frames": 6000,
   "final_demo_seconds": 200,
   "final_demo_resolution": "1920x1080",
@@ -23,7 +33,7 @@
   "final_demo_decode": "Full FFmpeg decode passed",
   "capture_edit_details": "capture-edit.json",
   "submission": {
-    "github_push": "Automatic approval review rejected push to public main pending explicit destination/payload authorization",
+    "github_push": "Published to public aqinaq/baiqonyr main on 2026-10-22 after explicit user authorization",
     "tag_v1.0": "Pending confirmed submission date",
     "ta_access": "Pending TA GitHub identity confirmation",
     "moodle": "Not submitted; browser session expired",

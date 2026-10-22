@@ -40,7 +40,7 @@ Demo: 200 seconds, 1920x1080, 30 FPS, feature captions, actual renderer and cont
 
 ## Current source refresh
 
-The report, slides, captures and demo are refreshed for the Kazakhstan terrain and detailed scenery. Both mission and terrain CTest targets pass locally. The source package is checked byte-for-byte, then built and tested after extraction. A GitHub Actions workflow is configured for Linux, macOS and Windows. Its first hosted run is pending publication; local validation is recorded in `evidence/validation.json`. This does not substitute for a desktop run on the TA machine.
+The report, slides, captures and demo are refreshed for the Kazakhstan terrain and detailed scenery. Both mission and terrain CTest targets pass locally. The source package is checked byte-for-byte, then built and tested after extraction. A GitHub Actions workflow is configured for Linux, macOS and Windows. All three hosted build/test jobs passed on 22 October 2026 ([run evidence](https://github.com/aqinaq/baiqonyr/actions/runs/39724116302)). Local and hosted results are recorded in `evidence/validation.json`. The report captures the earlier local-validation stage; this checklist records the subsequent hosted results. This does not substitute for a desktop run on the TA machine.
 
 ## Team actions before submission
 

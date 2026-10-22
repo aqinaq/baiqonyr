@@ -26,7 +26,7 @@ ctest --test-dir build -C Release --output-on-failure
 .\build\Release\baikonur.exe
 ```
 
-macOS requires Xcode Command Line Tools. Linux uses GLFW's X11 backend, requiring the usual compiler, X11, Xrandr, Xinerama, Xcursor, Xi and OpenGL development headers. On Ubuntu these are provided by `build-essential cmake xorg-dev libgl1-mesa-dev`. They are system prerequisites; all project libraries are bundled. Confirm compatibility with the course assignment setup before submission. Windows/Linux commands have not been executed locally. The repository includes a GitHub Actions build/test matrix for Windows, macOS and Linux; its first hosted run is pending publication.
+macOS requires Xcode Command Line Tools. Linux uses GLFW's X11 backend, requiring the usual compiler, X11, Xrandr, Xinerama, Xcursor, Xi and OpenGL development headers. On Ubuntu these are provided by `build-essential cmake xorg-dev libgl1-mesa-dev`. They are system prerequisites; all project libraries are bundled. Confirm compatibility with the course assignment setup before submission. Windows/Linux commands have not been executed locally. The repository includes a GitHub Actions build/test matrix for Windows, macOS and Linux; all three hosted build/test jobs passed on 22 October 2026 ([run evidence](https://github.com/aqinaq/baiqonyr/actions/runs/39724116302)).
 
 The build copies `shaders/` and `assets/` beside the executable. Keep both folders with the executable if moving it. These folders are also accepted from the working directory. Run from a writable directory for screenshots. Context-creation errors usually require checking the graphics driver/OpenGL support or the desktop session.
 
