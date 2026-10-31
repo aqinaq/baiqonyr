@@ -57,7 +57,7 @@ Camera movement remains available while paused. Input over the control panel bel
 ## Features and source layout
 
 - Indexed procedural cubes, cylinders, cones and spheres form the pad, rocket, boosters, gantry, buildings, tanks, radome, roads and lights.
-- The terrain follows Kazakhstan's outline, using a bundled Natural Earth boundary, concave triangulation and solid side walls. North is -Z, east is +X, and the launch pad sits at the projected Baikonur location. The country is scaled to 10,000 scene units wide; its full outline becomes visible from high altitude. `python3 tools/generate_kazakhstan.py` regenerates the baked boundary without downloads.
+- The terrain follows Kazakhstan's outline, using a bundled Natural Earth boundary, concave triangulation and solid side walls. North is -Z, east is +X, and the launch pad sits at the projected Baikonur location. The country is scaled to 10,000 scene units wide; its full outline becomes visible from high altitude. `node tools/generate_kazakhstan.mjs` regenerates the baked boundary without downloads.
 - The launch-site background includes a ribbed assembly hangar, fuel farm and pipework, lattice communications mast, service vehicles, containers, railway, fencing and utility cables. Sparse steppe scrub, stones, irregular ridges, mottled ground and drifting clouds add detail before liftoff. These are stylized procedural scenery, not a reconstruction of the actual facility.
 - Explicit MVP matrices and parent/child transforms; boosters detach in world space with continuous position and initial vertical velocity.
 - Own per-fragment Blinn-Phong GLSL, inverse-transpose normals, directional sun, toggled gantry light and moving engine light.
@@ -77,7 +77,7 @@ Camera movement remains available while paused. Input over the control panel bel
 ./build/baikonur --launch --start-time 24 --duration 12 --no-retina --no-vsync --csv output/separation.csv
 ```
 
-CSV output excludes the first two seconds. `python3 tools/benchmark.py` repeats these tests and updates `docs/evidence/metrics.json` and raw evidence; it expects the single-configuration `build/baikonur` path. Windows users can run the commands directly with their executable path. Close GPU-heavy work before measuring.
+CSV output excludes the first two seconds. `node tools/benchmark.mjs` repeats these tests and updates `docs/evidence/metrics.json` and raw evidence; it expects the single-configuration `build/baikonur` path. Windows users can run the commands directly with their executable path. Close GPU-heavy work before measuring.
 
 Local 720p mean frame-loop throughput for the current terrain/scenery: 504.4 FPS ready, 477.6 FPS ignition/ascent, 586.2 FPS separation/stars. Respective p95 frame times: 3.93, 2.73, 2.14 ms. Occasional frame outliers remain; averages do not guarantee every frame meets the target. These are CPU frame-loop measurements including swaps, not GPU-only timings. TA-machine performance still requires verification.
 
@@ -119,3 +119,38 @@ AI-assisted validation fixed GLAD definition scope, particle emission ratio at h
 The package includes source, template-based report DOCX/PDF, ten-slide PPTX with notes, and a 3:20 captioned 1080p demo. Complete the external/personal items in the checklist: topic approval, actual member contributions and commits, TA access to [the repository](https://github.com/aqinaq/baiqonyr), `v1.0` tag on the actual submission revision, dates, TA-machine checks and Moodle upload. Deadline: three days before defense at 23:59 Asia/Almaty. This package does not establish those actions or guarantee a grade.
 
 The current refresh passes both `mission_invariants` and `kazakhstan_terrain`. The source ZIP includes the current terrain/scenery files and is checked byte-for-byte against the workspace. See `docs/evidence/validation.json` for the latest verification record.
+
+## Space destinations
+
+After T+40 (compressed simulation time), ascent stops and the navigation panel asks
+for a destination. Drag / WASD to look around the Sun, Moon and seven other planets;
+Earth is below the spacecraft. Choose a route with the mouse. Transfers take 18
+simulation seconds; P pauses, R restarts, and the speed setting also affects transfers.
+Moon, Mars, Mercury, Saturn, Uranus and Neptune end in a safe observation orbit.
+Sun, Venus and Jupiter deliberately select fatal entry trajectories: warnings and hull
+loss lead to a particle burst, drifting wreckage, lost crew and Game Over. The fatal
+routes are labelled before selection. These are fictional, simplified hazards, not
+reconstructions of historical accidents or an orbital mechanics simulator. Bodies,
+distances and travel times are artistically compressed.
+
+For repeatable previews: `./build/baikonur --launch --start-time 40 --destination 2
+--duration 23 --capture-at 22 --capture /tmp/solar-game-over.ppm` (one line).
+Destination indices follow the navigation list, from Moon (0) to Neptune (8).
+
+## Optional maintenance tools
+
+The application and CMake build require no scripting runtime. Maintenance tools use Node.js 18+ with built-in modules only (no npm install). Packaging and DOCX generation additionally use the system `zip` and `unzip` commands, available on macOS/Linux; Windows users can use WSL for these tools.
+
+```sh
+node tools/generate_kazakhstan.mjs
+node tools/benchmark.mjs
+node tools/build_report.mjs --submission-date "To be confirmed"
+node tools/package_offline.mjs --build-dir build
+node tools/package.mjs
+```
+
+The report reads editable prose/layout blocks from `docs/report-content.json`, current metrics and references, and figures from `docs/evidence/`. Its bundled university template is `docs/templates/report.docx`; use `--template` to supply the same cover layout elsewhere, and `--output` to choose a DOCX destination. Review pagination in Word or LibreOffice and export the PDF after report changes. The PDF is not regenerated by the script.
+
+Benchmark options: `--executable /path/to/baikonur` and `--output-dir /path/to/evidence`. `node tools/package.mjs --source-only` regenerates just the verified source ZIP. Generate the offline backup from the current build before packaging the complete submission.
+
+Maintenance scripts were migrated to JavaScript; the terrain output was checked against the previous baked geometry and the C++ tests were rerun. Upstream library documentation and generated-loader provenance are retained as supplied; their generator tools are not needed for this project.

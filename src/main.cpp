@@ -21,6 +21,7 @@ struct Options {
     int width = 1280, height = 720;
     double duration = 0, captureAt = -1;
     float startTime = -8;
+    int destination = -1;
     bool demo = false, launch = false, vsync = true, retina = true, hardwareEncode = false,
          wireframe = false;
     std::string capture = "output/screenshot.ppm", csv, record, ffmpeg = "ffmpeg";
@@ -46,6 +47,8 @@ Options options(int argc, char **argv) {
             o.capture = value();
         else if (a == "--csv")
             o.csv = value();
+        else if (a == "--destination")
+            o.destination = std::stoi(value());
         else if (a == "--start-time")
             o.startTime = std::stof(value());
         else if (a == "--record")
@@ -69,13 +72,15 @@ Options options(int argc, char **argv) {
                 << "Baikonur: --demo --duration SECONDS --launch --start-time SECONDS "
                    "--width N --height N --no-retina --no-vsync --csv FILE --capture-at SECONDS "
                    "--capture FILE.ppm --record FILE.mp4 --ffmpeg PATH --wireframe "
-                   "--hardware-encode (macOS)\n";
+                   "--hardware-encode (macOS) --destination 0..8 (auto-select in space)\n";
             std::exit(0);
         } else
             throw std::runtime_error("Unknown option: " + a);
     }
     if (o.width < 640 || o.height < 360 || o.width > 3840 || o.height > 2160 || o.duration < 0)
         throw std::runtime_error("Invalid dimensions or duration");
+    if (o.destination < -1 || o.destination >= destinationCount)
+        throw std::runtime_error("Destination must be 0..8");
     return o;
 }
 static float scrollDelta = 0;
@@ -243,6 +248,13 @@ int main(int argc, char **argv) {
                     ui.reset = false;
                 }
                 mission.update(dt);
+                if (mission.flight == Flight::Choosing && o.destination >= 0) {
+                    mission.selectDestination(o.destination);
+                    glm::vec3 approach = glm::normalize(destinations[o.destination].center-mission.position());
+                    camera.yaw = std::atan2(-approach.x,-approach.z)+.3f;
+                    camera.pitch = .12f;
+                    camera.distance = 58;
+                }
                 particles.update(dt, mission);
                 if (target)
                     target->bind();

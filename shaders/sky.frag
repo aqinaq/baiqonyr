@@ -27,5 +27,9 @@ void main(){
  vec3 grid=ray*420;float star=hash(floor(grid));vec3 local=fract(grid)-.5;
  float sparkle=pow(max(0.,1-length(local)*2),6.0)*step(.991,star);
  col+=vec3(.75,.86,1)*sparkle*6*smoothstep(.35,.8,max(altitude,night));
+ // A restrained dusty galactic band, fixed in world direction.
+ float band=exp(-pow((ray.y-ray.x*.32-.12)*5.5,2.0));
+ float dust=cloudNoise(ray.xz*8.0)*.6+cloudNoise(ray.xz*23.0)*.4;
+ col+=mix(vec3(.035,.045,.085),vec3(.17,.12,.08),dust)*band*altitude* dust;
  fragColor=vec4(col,1);
 }

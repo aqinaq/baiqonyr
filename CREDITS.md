@@ -4,7 +4,7 @@ The mesh construction, concrete texture, procedural steppe/sky/stars, GLSL scene
 
 ## Kazakhstan terrain boundary
 
-`assets/maps/kazakhstan.geojson` contains the Kazakhstan polygon from [Natural Earth v5.1.2, 1:110m Admin 0 Countries](https://github.com/nvkelso/natural-earth-vector/blob/v5.1.2/geojson/ne_110m_admin_0_countries.geojson), [public-domain map data](https://www.naturalearthdata.com/about/terms-of-use/). `tools/generate_kazakhstan.py` projects the coordinates at 48° N, centres the launch area at approximately 63.34° E, 45.92° N, scales the country to 10,000 scene units wide, and ear-clips the concave outline into `src/KazakhstanBoundary.hpp`. This is a simplified display map, with a stylized 60-unit-deep base, not a terrain elevation dataset.
+`assets/maps/kazakhstan.geojson` contains the Kazakhstan polygon from [Natural Earth v5.1.2, 1:110m Admin 0 Countries](https://github.com/nvkelso/natural-earth-vector/blob/v5.1.2/geojson/ne_110m_admin_0_countries.geojson), [public-domain map data](https://www.naturalearthdata.com/about/terms-of-use/). `tools/generate_kazakhstan.mjs` projects the coordinates at 48° N, centres the launch area at approximately 63.34° E, 45.92° N, scales the country to 10,000 scene units wide, and ear-clips the concave outline into `src/KazakhstanBoundary.hpp`. This is a simplified display map, with a stylized 60-unit-deep base, not a terrain elevation dataset.
 
 | Dependency | Author / project | Version / source | License retained |
 |---|---|---|---|

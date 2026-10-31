@@ -13,7 +13,7 @@ class Camera {
     }
     void zoom(float amount) { distance = std::clamp(distance - amount * 2.f, 12.f, 180.f); }
     glm::mat4 view(const Mission &m, float realTime) {
-        target = glm::vec3(0, 9 + (chase ? m.altitude() : 0), 0);
+        target = glm::vec3(0, 9, 0) + ((chase || m.inSpace()) ? m.position() : glm::vec3(0));
         eye = target + distance * glm::vec3(std::sin(yaw) * std::cos(pitch), std::sin(pitch),
                                             std::cos(yaw) * std::cos(pitch));
         if (shake && m.ignition() && m.clock < 4 && !m.paused) {
@@ -21,6 +21,8 @@ class Camera {
             eye += amp * glm::vec3(std::sin(realTime * 83), std::cos(realTime * 97),
                                    std::sin(realTime * 71));
         }
+        if (shake && !m.paused && m.flight == Flight::Transit && m.danger() > 0)
+            eye += m.danger()*.22f*glm::vec3(std::sin(realTime*53),std::cos(realTime*47),0);
         return glm::lookAt(eye, target, glm::vec3(0, 1, 0));
     }
 };

@@ -94,7 +94,77 @@ void directDemo(double t, Mission &m, Camera &c, Scene &s, Particles &p) {
         m.paused = true;
     // Main applies frame-independent orbit using elapsed wall time.
 }
+static void spaceUI(Mission &m, Camera &c, UIState &ui) {
+    auto size = ImGui::GetIO().DisplaySize;
+    auto *background = ImGui::GetBackgroundDrawList();
+    background->AddRectFilled({0,0}, {size.x,22}, IM_COL32(0,0,0,255));
+    background->AddRectFilled({0,size.y-22}, size, IM_COL32(0,0,0,255));
+    ImGui::SetNextWindowPos({20,32});
+    ImGui::SetNextWindowSize({std::min(370.f, size.x-40),0});
+    ImGui::Begin("Flight telemetry", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::TextColored({.55f,.8f,.9f,1}, "BAIKONUR / BEYOND THE BLUE");
+    ImGui::TextWrapped("%s", m.phase().c_str());
+    if (m.destination >= 0) ImGui::Text("DESTINATION  /  %s", destinations[m.destination].name);
+    if (m.flight == Flight::Transit) {
+        ImGui::ProgressBar(m.progress(), {-1,5}, "");
+        ImGui::Text("HULL %03.0f%%   /   SIGNAL %03.0f%%", 100*(1-m.danger()),100*(1-m.danger()*.95f));
+        if (m.danger() > 0) ImGui::TextWrapped("%s", destinations[m.destination].warning);
+        if (m.danger() > .65f) ImGui::TextColored({1,.3f,.18f,1}, "CRITICAL / STRUCTURAL INTEGRITY LOST");
+    }
+    if (ImGui::Button("RESTART [R]")) ui.reset = true;
+    ImGui::SameLine();
+    if (ImGui::Button(m.paused ? "RESUME [P]" : "PAUSE [P]")) m.paused = !m.paused;
+    ImGui::TextDisabled("Drag / WASD: look around  |  Scroll: zoom");
+    ImGui::End();
+    if (m.flight == Flight::Choosing || m.flight == Flight::Arrived ||
+        (m.flight == Flight::Destroyed && m.aftermath > 2.f)) {
+        ImGui::SetNextWindowPos({size.x*.5f, size.y*.55f}, ImGuiCond_Always, {.5f,.5f});
+        ImGui::SetNextWindowSize({std::min(520.f,size.x-32), std::min(450.f,size.y-90)});
+        ImGui::Begin("Navigation", nullptr, ImGuiWindowFlags_NoDecoration);
+        ImGui::PushFont(titleFont);
+        ImGui::TextUnformatted(m.flight == Flight::Choosing ? "WHERE DO WE GO?" :
+                              m.flight == Flight::Arrived ? "ORBIT ACHIEVED" : "GAME OVER");
+        ImGui::PopFont();
+        if (m.flight == Flight::Choosing) {
+            ImGui::TextWrapped("Earth is behind us. Choose a destination to begin the transfer.");
+            ImGui::TextDisabled("Cinematic scale / compressed travel time");
+            ImGui::Separator();
+            for (int i = 0; i < destinationCount; ++i) {
+                const auto &d = destinations[i];
+                ImGui::PushID(i);
+                if (ImGui::Button(d.name, {110,30})) {
+                    m.selectDestination(i);
+                    c.chase = true;
+                    glm::vec3 approach = glm::normalize(d.center-m.position());
+                    c.yaw = std::atan2(-approach.x,-approach.z)+.3f;
+                    c.pitch = .12f;
+                    c.distance = 58;
+                }
+                ImGui::SameLine();
+                ImGui::TextColored(d.dangerous ? ImVec4(1,.4f,.23f,1) : ImVec4(.5f,.8f,.75f,1),
+                                   "%s", d.dangerous ? "FATAL ENTRY" : "SAFE ORBIT");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", d.warning);
+                ImGui::PopID();
+            }
+        } else {
+            ImGui::Spacing();
+            if (m.flight == Flight::Destroyed) {
+                ImGui::TextColored({1,.35f,.2f,1}, "VEHICLE DESTROYED / CREW LOST");
+                ImGui::TextWrapped("%s", destinations[m.destination].warning);
+                ImGui::TextWrapped("No response from the spacecraft. Mission control has closed the channel.");
+            } else {
+                ImGui::TextWrapped("%s survey complete. Crew safe. Engines shut down.", destinations[m.destination].name);
+                ImGui::TextWrapped("Take a moment. There is a whole universe outside the window.");
+            }
+            ImGui::Spacing();
+            ImGui::TextWrapped("Fictional mission inspired by spaceflight hazards. Distances and outcomes are simplified for gameplay.");
+            if (ImGui::Button("RETURN TO BAIKONUR", {-1,40})) ui.reset = true;
+        }
+        ImGui::End();
+    }
+}
 void drawUI(Mission &m, Camera &c, Scene &s, const Particles &p, UIState &ui) {
+    if (m.inSpace() && !ui.demo) { spaceUI(m, c, ui); return; }
     const auto &io = ImGui::GetIO();
     ImGui::SetNextWindowPos({24, 24});
     ImGui::SetNextWindowSize({294, 0});

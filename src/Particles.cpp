@@ -41,6 +41,8 @@ void Particles::emit(const Mission &m, bool fire) {
         p.y = std::max(.6f, alt - .4f);
         v = {std::cos(a) * (3 + random() * 4), 1 + random() * 2, std::sin(a) * (3 + random() * 4)};
     }
+    p = glm::vec3(m.rocket() * glm::vec4(p - glm::vec3(0, alt, 0), 1));
+    v = glm::mat3(m.rocket()) * v;
     pool.push_back({p, v, 0, fire ? .35f + random() * .65f : 3 + random() * 3,
                     fire ? .25f + random() * .3f : .7f + random(), fire});
 }
@@ -48,6 +50,16 @@ void Particles::update(float dt, const Mission &m) {
     if (m.paused)
         return;
     dt *= m.speed;
+    if (m.flight == Flight::Destroyed && !exploded) {
+        exploded = true;
+        pool.clear();
+        for (int i = 0; i < 1000; ++i) {
+            glm::vec3 direction(random()-.5f, random()-.5f, random()-.5f);
+            direction = glm::normalize(direction + glm::vec3(.0001f));
+            pool.push_back({m.position() + glm::vec3(0,8,0), direction*(4+random()*22),
+                            0, 1.5f+random()*3, .3f+random(), true});
+        }
+    }
     for (auto &p : pool) {
         p.age += dt;
         p.p += p.v * dt;

@@ -51,6 +51,32 @@ int main() {
         require(atmosphere(900) == 1 && atmosphere(-1) == 0, "atmosphere factor bounded");
         for (int i = 0; i < 4; i++)
             require(std::isfinite(m.booster(i)[3].y), "booster transform finite");
+        Mission trip;
+        require(!trip.selectDestination(0), "cannot choose destination before orbit");
+        trip.launch();
+        trip.update(1000);
+        require(trip.flight == Flight::Choosing && trip.clock == 40, "ascent stops at navigation gate");
+        auto holding = trip.position();
+        trip.update(1000);
+        require(glm::length(trip.position()-holding) == 0, "waiting does not drift indefinitely");
+        require(!trip.selectDestination(-1) && !trip.selectDestination(destinationCount), "invalid destinations rejected");
+        for (int i = 0; i < destinationCount; ++i) {
+            trip.reset(); trip.launch(); trip.update(48);
+            require(trip.selectDestination(i), "destination accepted at gate");
+            trip.paused = true; trip.update(50);
+            require(trip.progress() == 0, "pause freezes transfer");
+            trip.paused = false;
+            trip.update(9);
+            require(trip.progress() == .5f && glm::length(trip.position()-holding) > 1, "ship travels toward destination");
+            require(!trip.selectDestination(0), "cannot change route mid-flight");
+            trip.update(9);
+            require(trip.flight == (destinations[i].dangerous ? Flight::Destroyed : Flight::Arrived), "route resolves to correct outcome");
+            require(!trip.ignition(), "engines stop at terminal outcome");
+            auto end = trip.position(); trip.update(100);
+            require(glm::length(trip.position()-end) == 0, "terminal position stays bounded");
+        }
+        trip.reset();
+        require(trip.destination == -1 && trip.aftermath == 0 && trip.flight == Flight::Ascent, "restart clears space mission");
         return 0;
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';

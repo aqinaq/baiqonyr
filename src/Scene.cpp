@@ -138,12 +138,43 @@ void Scene::render(const Mission &m, Camera &camera, int width, int height, floa
     shader.set("night", night ? 1.f : 0.f);
     shader.set("altitude", a);
     shader.set("lightsOn", lights ? 1 : 0);
-    shader.set("enginePos", glm::vec3(0, m.altitude() + 1.4f, 0));
+    shader.set("enginePos", glm::vec3(m.rocket() * glm::vec4(0, 1.4f, 0, 1)));
     shader.set("enginePower", m.ignition() ? 9.f : 0.f);
-    for (const auto &o : ground)
-        draw(o, glm::mat4(1));
-    for (const auto &o : rocketParts)
-        draw(o, m.rocket());
+    if (m.altitude() < 700.f)
+        for (const auto &o : ground) draw(o, glm::mat4(1));
+    if (m.altitude() > 350.f) {
+        draw(obj(3, {0,-1450,0}, {1850,1850,1850}, {.08,.28,.52}, 3), glm::mat4(1));
+        for (int i = 0; i < destinationCount; ++i) {
+            const auto &d = destinations[i];
+            draw(obj(3, d.center, glm::vec3(d.radius), d.color, i == 2 ? 5 : 4,
+                     8, i == 2 ? 2.5f : .12f), glm::mat4(1));
+            if (i == 5) {
+                // Many slim rocks form a tilted, three-dimensional ring system.
+                for (int j = 0; j < 240; ++j) {
+                    float angle = j * 2.f*pi/240.f;
+                    for (float r : {230.f, 247.f, 265.f, 280.f}) {
+                        glm::vec3 offset(std::cos(angle)*r, std::sin(angle)*r*.25f, std::sin(angle)*r);
+                        draw(obj(3, d.center+offset, {8,1.3f,8}, {.52,.45,.31}, 0, 4, .15f), glm::mat4(1));
+                    }
+                }
+            }
+        }
+    }
+    if (m.flight != Flight::Destroyed) {
+        for (auto o : rocketParts) {
+            o.color = glm::mix(o.color, glm::vec3(1,.16f,.025f), m.danger()*.65f);
+            o.emission += m.danger()*1.5f;
+            draw(o, m.rocket());
+        }
+    } else {
+        for (size_t i = 0; i < rocketParts.size(); ++i) {
+            float angle = float(i)*2.39996f;
+            glm::vec3 drift(std::cos(angle), std::sin(angle*.7f), std::sin(angle));
+            glm::mat4 debris = glm::translate(glm::mat4(1), drift*m.aftermath*8.f);
+            debris = debris * m.rocket() * glm::rotate(glm::mat4(1), m.aftermath*(.3f+i*.07f), glm::normalize(drift));
+            draw(rocketParts[i], debris);
+        }
+    }
     for (int i = 0; i < 4; i++)
         for (const auto &o : boosterParts)
             draw(o, m.booster(i));

@@ -18,6 +18,7 @@ class Particles {
     std::vector<Particle> pool;
     std::vector<ParticleGPU> upload;
     std::mt19937 rng{904};
+    bool exploded = false;
     float spawn = 0;
     unsigned emitted = 0;
     float random();
@@ -28,6 +29,7 @@ class Particles {
     ~Particles();
     void reset() {
         pool.clear();
+        exploded = false;
         spawn = 0;
         emitted = 0;
         rng.seed(904);

@@ -19,6 +19,12 @@ vec3 illuminate(vec3 n,vec3 v,vec3 l,vec3 color,float strength){
 }
 void main(){
  vec3 n=normalize(normal),v=normalize(eye-worldPos);
+ if(material==5){
+  float granules=groundNoise(uv*170.0)*.55+groundNoise(uv*47.0)*.45;
+  float limb=pow(max(dot(n,v),0.0),.4);
+  vec3 solar=mix(vec3(.65,.12,.015),vec3(1.0,.76,.3),granules*.6+limb*.4);
+  fragColor=vec4(solar,1);return;
+ }
  vec3 albedo=baseColor;
  if(material==1)albedo*=texture(concrete,uv*8.0).rgb;
  if(material==2){
@@ -28,6 +34,17 @@ void main(){
   float grain=groundNoise(p*2.5)*detailFade;
   albedo*=.72+.32*broad+.16*patch+.08*grain;
   albedo=mix(albedo,albedo*vec3(.73,.86,.58),smoothstep(.52,.76,broad)*.42);
+ }
+ if(material==3){
+  float land=groundNoise(uv*vec2(22,12))*.65+groundNoise(uv*vec2(49,27))*.35;
+  albedo=mix(vec3(.035,.16,.37),vec3(.19,.30,.16),smoothstep(.48,.58,land));
+  albedo=mix(albedo,vec3(.85,.89,.91),smoothstep(.78,.94,abs(n.y)));
+  float clouds=smoothstep(.58,.76,groundNoise(uv*vec2(55,30)));
+  albedo=mix(albedo,vec3(.8,.85,.9),clouds*.65);
+ }
+ if(material==4){
+  float bands=sin(uv.y*90.0+groundNoise(uv*17.0)*4.0)*.12;
+  albedo*=.7+groundNoise(uv*90.0)*.35+bands;
  }
  vec3 lit=albedo*mix(.23,.07,night);
  lit+=illuminate(n,v,normalize(sunDir),mix(vec3(1.0,.78,.52),vec3(.24,.36,.65),night),.92)*(albedo/max(baseColor,vec3(.01)));
