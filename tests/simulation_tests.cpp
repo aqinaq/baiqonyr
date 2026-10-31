@@ -55,14 +55,17 @@ int main() {
         require(!trip.selectDestination(0), "cannot choose destination before orbit");
         trip.launch();
         trip.update(1000);
-        require(trip.flight == Flight::Choosing && trip.clock == 40, "ascent stops at navigation gate");
+        require(trip.flight == Flight::Choosing && trip.clock == Mission::orbitTime, "ascent stops at navigation gate");
         auto holding = trip.position();
         trip.update(1000);
         require(glm::length(trip.position()-holding) == 0, "waiting does not drift indefinitely");
         require(!trip.selectDestination(-1) && !trip.selectDestination(destinationCount), "invalid destinations rejected");
         for (int i = 0; i < destinationCount; ++i) {
-            trip.reset(); trip.launch(); trip.update(48);
+            trip.reset(); trip.launch(); trip.update(Mission::orbitTime+8);
             require(trip.selectDestination(i), "destination accepted at gate");
+            for (std::size_t j=1; j<trip.route.size(); ++j)
+                require(Mission::clearSegment(trip.route[j-1],trip.route[j]),
+                        "entire route clears every planet and ring envelope");
             trip.paused = true; trip.update(50);
             require(trip.progress() == 0, "pause freezes transfer");
             trip.paused = false;
@@ -72,6 +75,14 @@ int main() {
             trip.update(9);
             require(trip.flight == (destinations[i].dangerous ? Flight::Destroyed : Flight::Arrived), "route resolves to correct outcome");
             require(!trip.ignition(), "engines stop at terminal outcome");
+            require(!trip.resultReady(), "outcome is not announced immediately");
+            trip.speed=20;
+            trip.update(2);
+            require(!trip.resultReady(), "20x playback does not skip result delay");
+            trip.paused=true; trip.update(20);
+            require(!trip.resultReady(), "pause freezes result delay");
+            trip.paused=false; trip.update(3);
+            require(trip.resultReady(), "result appears after five real seconds");
             auto end = trip.position(); trip.update(100);
             require(glm::length(trip.position()-end) == 0, "terminal position stays bounded");
         }

@@ -11,9 +11,10 @@ class Camera {
         yaw -= x * .006f;
         pitch = std::clamp(pitch + y * .006f, -.12f, 1.45f);
     }
-    void zoom(float amount) { distance = std::clamp(distance - amount * 2.f, 12.f, 180.f); }
+    void zoom(float amount) { distance = std::clamp(distance * std::exp(-amount * .08f), 12.f, 12000.f); }
     glm::mat4 view(const Mission &m, float realTime) {
         target = glm::vec3(0, 9, 0) + ((chase || m.inSpace()) ? m.position() : glm::vec3(0));
+        if (m.flight == Flight::Choosing) target = {500, 0, 0};
         eye = target + distance * glm::vec3(std::sin(yaw) * std::cos(pitch), std::sin(pitch),
                                             std::cos(yaw) * std::cos(pitch));
         if (shake && m.ignition() && m.clock < 4 && !m.paused) {

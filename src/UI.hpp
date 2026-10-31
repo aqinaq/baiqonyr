@@ -3,7 +3,7 @@
 #include "Scene.hpp"
 namespace bk {
 struct UIState {
-    bool help = true, reset = false;
+    bool help = false, reset = false, panel = true, routeBlocked = false;
     float fps = 0, frameMs = 0;
     int pixelWidth = 0, pixelHeight = 0;
     double wall = 0;

@@ -31,3 +31,10 @@ add_test(NAME mission_invariants COMMAND simulation_tests)
 add_executable(terrain_tests tests/terrain_tests.cpp src/Kazakhstan.cpp)
 target_include_directories(terrain_tests PRIVATE src vendor/glm vendor/glfw/deps)
 add_test(NAME kazakhstan_terrain COMMAND terrain_tests)
+
+# Optional offline geometry utility, using the same C++17 toolchain as the app.
+add_executable(generate_kazakhstan EXCLUDE_FROM_ALL tools/generate_kazakhstan.cpp)
+add_custom_target(regenerate_terrain
+ COMMAND generate_kazakhstan "${CMAKE_SOURCE_DIR}/assets/maps/kazakhstan.geojson" "${CMAKE_SOURCE_DIR}/src/KazakhstanBoundary.hpp"
+ DEPENDS generate_kazakhstan
+ VERBATIM)

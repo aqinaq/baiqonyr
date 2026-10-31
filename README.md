@@ -47,17 +47,17 @@ Verified locally: Apple M1, 8 GiB RAM, macOS 26.3.1, AppleClang 21.0.0, Release,
 | Toggle gantry light | L |
 | Toggle day/night | N |
 | Toggle wireframe | F |
-| Show/hide help | H |
+| Show/hide flight controls | H |
 | Save `output/screenshot.ppm` | F12 |
 | Exit | Esc |
-| Change playback speed | On-screen slider |
+| Change playback speed (0.25×–20×) | On-screen slider; Ctrl-click to enter an exact value |
 
 Camera movement remains available while paused. Input over the control panel belongs to the interface. The flight path is a compressed visual trajectory, not physical aerospace simulation.
 
 ## Features and source layout
 
 - Indexed procedural cubes, cylinders, cones and spheres form the pad, rocket, boosters, gantry, buildings, tanks, radome, roads and lights.
-- The terrain follows Kazakhstan's outline, using a bundled Natural Earth boundary, concave triangulation and solid side walls. North is -Z, east is +X, and the launch pad sits at the projected Baikonur location. The country is scaled to 10,000 scene units wide; its full outline becomes visible from high altitude. `node tools/generate_kazakhstan.mjs` regenerates the baked boundary without downloads.
+- The terrain follows Kazakhstan's outline, using a bundled Natural Earth boundary, concave triangulation and solid side walls. North is -Z, east is +X, and the launch pad sits at the projected Baikonur location. The country is scaled to 10,000 scene units wide; its full outline becomes visible from high altitude. `cmake --build build --target regenerate_terrain` regenerates the baked boundary with the C++17 utility, without downloads.
 - The launch-site background includes a ribbed assembly hangar, fuel farm and pipework, lattice communications mast, service vehicles, containers, railway, fencing and utility cables. Sparse steppe scrub, stones, irregular ridges, mottled ground and drifting clouds add detail before liftoff. These are stylized procedural scenery, not a reconstruction of the actual facility.
 - Explicit MVP matrices and parent/child transforms; boosters detach in world space with continuous position and initial vertical velocity.
 - Own per-fragment Blinn-Phong GLSL, inverse-transpose normals, directional sun, toggled gantry light and moving engine light.
@@ -77,7 +77,7 @@ Camera movement remains available while paused. Input over the control panel bel
 ./build/baikonur --launch --start-time 24 --duration 12 --no-retina --no-vsync --csv output/separation.csv
 ```
 
-CSV output excludes the first two seconds. `node tools/benchmark.mjs` repeats these tests and updates `docs/evidence/metrics.json` and raw evidence; it expects the single-configuration `build/baikonur` path. Windows users can run the commands directly with their executable path. Close GPU-heavy work before measuring.
+CSV output excludes the first two seconds. `sh tools/benchmark.sh` repeats these tests and saves raw CSV/log evidence; it defaults to the single-configuration `build/baikonur` path. The historical `metrics.json` summary is not automatically updated. Windows users can run the commands directly with their executable path. Close GPU-heavy work before measuring.
 
 Local 720p mean frame-loop throughput for the current terrain/scenery: 504.4 FPS ready, 477.6 FPS ignition/ascent, 586.2 FPS separation/stars. Respective p95 frame times: 3.93, 2.73, 2.14 ms. Occasional frame outliers remain; averages do not guarantee every frame meets the target. These are CPU frame-loop measurements including swaps, not GPU-only timings. TA-machine performance still requires verification.
 
@@ -122,35 +122,43 @@ The current refresh passes both `mission_invariants` and `kazakhstan_terrain`. T
 
 ## Space destinations
 
-After T+40 (compressed simulation time), ascent stops and the navigation panel asks
-for a destination. Drag / WASD to look around the Sun, Moon and seven other planets;
-Earth is below the spacecraft. Choose a route with the mouse. Transfers take 18
-simulation seconds; P pauses, R restarts, and the speed setting also affects transfers.
-Moon, Mars, Mercury, Saturn, Uranus and Neptune end in a safe observation orbit.
-Sun, Venus and Jupiter deliberately select fatal entry trajectories: warnings and hull
-loss lead to a particle burst, drifting wreckage, lost crew and Game Over. The fatal
-routes are labelled before selection. These are fictional, simplified hazards, not
-reconstructions of historical accidents or an orbital mechanics simulator. Bodies,
-distances and travel times are artistically compressed.
+After T+100 (compressed simulation time), ascent stops above the Kazakhstan map.
+The map remains the home world throughout flight, with a cyan-and-gold flag on the
+map and a flagpole beside the launch pad. The camera opens a map overview at the
+navigation gate; choose a destination from the compact bottom control panel.
 
-For repeatable previews: `./build/baikonur --launch --start-time 40 --destination 2
---duration 23 --capture-at 22 --capture /tmp/solar-game-over.ppm` (one line).
+The translucent panel can be dragged by its title, collapsed, closed and reopened
+with the bottom-left Flight controls button. Camera/settings help is collapsed by
+default. Playback speed remains available from 0.25× to 20× during transfers.
+
+Transfers take 18 simulation seconds. A visibility graph selects clear segments
+around every planet and Saturn's ring envelope; the spacecraft stops outside the
+destination surface. Planet materials include rocky craters, Martian canyons and
+polar caps, gas bands, storms, and solar granulation. Low/high risk labels describe
+routes without announcing their outcome. Sun, Venus and Jupiter remain the high-risk
+routes in this simplified game; other destinations reach observation orbits.
+
+After arrival or destruction, the scene continues for five real seconds before the
+small result message appears. Playback speed does not shorten this delay, and pause
+freezes it. Explosion particles and drifting wreckage also use real time so they
+remain visible at 20×. Safe destinations finish in orbit, not a surface landing.
+
+For repeatable previews: `./build/baikonur --launch --start-time 100 --destination 2
+--duration 25 --capture-at 24 --capture /tmp/solar-game-over.ppm` (one line).
 Destination indices follow the navigation list, from Moon (0) to Neptune (8).
 
-## Optional maintenance tools
+## Course toolchain and maintenance
 
-The application and CMake build require no scripting runtime. Maintenance tools use Node.js 18+ with built-in modules only (no npm install). Packaging and DOCX generation additionally use the system `zip` and `unzip` commands, available on macOS/Linux; Windows users can use WSL for these tools.
+The application uses C++17, OpenGL/GLSL, GLFW, GLM, GLAD and Dear ImGui. Build and packaging use CMake; the optional benchmark launcher uses a POSIX shell. No Python, JavaScript, Node.js or npm is required.
 
 ```sh
-node tools/generate_kazakhstan.mjs
-node tools/benchmark.mjs
-node tools/build_report.mjs --submission-date "To be confirmed"
-node tools/package_offline.mjs --build-dir build
-node tools/package.mjs
+cmake --build build --target regenerate_terrain
+sh tools/benchmark.sh
+cmake -P tools/package.cmake
 ```
 
-The report reads editable prose/layout blocks from `docs/report-content.json`, current metrics and references, and figures from `docs/evidence/`. Its bundled university template is `docs/templates/report.docx`; use `--template` to supply the same cover layout elsewhere, and `--output` to choose a DOCX destination. Review pagination in Word or LibreOffice and export the PDF after report changes. The PDF is not regenerated by the script.
+Terrain generation uses the same C++17 compiler as the application. The checked-in boundary header lets normal builds run without regeneration. `sh tools/benchmark.sh /path/to/baikonur /path/to/evidence` selects another executable and output directory. Raw frame times are available in CSV files; summary statistics and report tables must be updated when measurements change.
 
-Benchmark options: `--executable /path/to/baikonur` and `--output-dir /path/to/evidence`. `node tools/package.mjs --source-only` regenerates just the verified source ZIP. Generate the offline backup from the current build before packaging the complete submission.
+`cmake -DSOURCE_ONLY=ON -P tools/package.cmake` creates only the source archive. Full packaging collects the existing report, PDF, slides and video, refreshes the executable backup on Apple Silicon macOS, and updates SHA256 checksums. Build the application before full packaging. Packaging does not recreate report, slide or video content.
 
-Maintenance scripts were migrated to JavaScript; the terrain output was checked against the previous baked geometry and the C++ tests were rerun. Upstream library documentation and generated-loader provenance are retained as supplied; their generator tools are not needed for this project.
+Edit the existing `output/Baikonur_Report.docx` directly in Word or LibreOffice and export its PDF after changes. Report-generation scripts have been removed. The graphics implementation and terrain geometry are unchanged by the toolchain cleanup. Unused generated HTML API documentation was removed from bundled GLM; library sources and license notices are retained.

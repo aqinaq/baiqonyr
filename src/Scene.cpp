@@ -69,6 +69,9 @@ Scene::Scene(const std::string &path)
         ground.push_back(obj(1, p, {.08, 4, .08}, steel));
         ground.push_back(obj(3, p + glm::vec3(0, 2, 0), {.18, .18, .18}, orange, 0, 32, 1.5));
     }
+    // Stylized national flag: cyan field, gold sun, eagle and hoist ornament in GLSL.
+    ground.push_back(obj(1, {11, 8, -6}, {.10,16,.10}, {.65,.68,.7}));
+    ground.push_back(obj(0, {14, 14, -6}, {6,3,.07}, {.02,.65,.82}, 7, 4, .25f));
     buildEnvironment();
     // All rocket parts inherit the animated core transform.
     rocketParts.push_back(obj(1, {0, 8.2, 0}, {1.16, 12, 1.16}, white, 0, 90));
@@ -106,13 +109,13 @@ void Scene::draw(const Object &o, const glm::mat4 &parent) {
     shader.set("material", o.material);
     shader.set("shininess", o.shine);
     shader.set("emission", o.emission);
-    const Mesh *meshes[] = {&box, &tube, &cone, &ball, &terrain, &rock, &scrub, &pipe, &ridges};
+    const Mesh *meshes[] = {&box, &tube, &cone, &ball, &terrain, &rock, &scrub, &pipe, &ridges, &rings};
     meshes[o.mesh]->draw(wireframe);
 }
 void Scene::render(const Mission &m, Camera &camera, int width, int height, float realTime) {
     glm::mat4 view = camera.view(m, realTime),
               projection =
-                  glm::perspective(glm::radians(48.f), float(width) / height, .1f, 20000.f);
+                  glm::perspective(glm::radians(48.f), float(width) / height, camera.distance > 1000 ? 10.f : .1f, 30000.f);
     float a = atmosphere(m.altitude());
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glDisable(GL_DEPTH_TEST);
@@ -131,6 +134,7 @@ void Scene::render(const Mission &m, Camera &camera, int width, int height, floa
     shader.use();
     concrete.bind();
     shader.set("concrete", 0);
+    shader.set("time", realTime);
     shader.set("view", view);
     shader.set("projection", projection);
     shader.set("eye", camera.eye);
@@ -140,23 +144,19 @@ void Scene::render(const Mission &m, Camera &camera, int width, int height, floa
     shader.set("lightsOn", lights ? 1 : 0);
     shader.set("enginePos", glm::vec3(m.rocket() * glm::vec4(0, 1.4f, 0, 1)));
     shader.set("enginePower", m.ignition() ? 9.f : 0.f);
-    if (m.altitude() < 700.f)
-        for (const auto &o : ground) draw(o, glm::mat4(1));
+    for (const auto &o : ground)
+        if (o.mesh == 4 || m.altitude() < 1000.f) draw(o, glm::mat4(1));
     if (m.altitude() > 350.f) {
-        draw(obj(3, {0,-1450,0}, {1850,1850,1850}, {.08,.28,.52}, 3), glm::mat4(1));
+// The Kazakhstan terrain remains our home world at every altitude.
         for (int i = 0; i < destinationCount; ++i) {
             const auto &d = destinations[i];
-            draw(obj(3, d.center, glm::vec3(d.radius), d.color, i == 2 ? 5 : 4,
+            draw(obj(3, d.center, glm::vec3(d.radius), d.color, i == 2 ? 5 : 10+i,
                      8, i == 2 ? 2.5f : .12f), glm::mat4(1));
             if (i == 5) {
-                // Many slim rocks form a tilted, three-dimensional ring system.
-                for (int j = 0; j < 240; ++j) {
-                    float angle = j * 2.f*pi/240.f;
-                    for (float r : {230.f, 247.f, 265.f, 280.f}) {
-                        glm::vec3 offset(std::cos(angle)*r, std::sin(angle)*r*.25f, std::sin(angle)*r);
-                        draw(obj(3, d.center+offset, {8,1.3f,8}, {.52,.45,.31}, 0, 4, .15f), glm::mat4(1));
-                    }
-                }
+                Object ring=obj(9,d.center,{210,210,210},{.72,.62,.43},19,4,.2f);
+                ring.transform=glm::translate(glm::mat4(1),d.center)*
+                    glm::rotate(glm::mat4(1),.24f,glm::vec3(1,0,0))*glm::scale(glm::mat4(1),glm::vec3(210));
+                draw(ring,glm::mat4(1));
             }
         }
     }

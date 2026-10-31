@@ -26,6 +26,8 @@ void setupUI(const std::string &fontPath) {
     s.FramePadding = {9, 7};
     s.WindowBorderSize = 1;
     s.Colors[ImGuiCol_WindowBg] = {.025f, .045f, .065f, .94f};
+    s.Colors[ImGuiCol_TitleBg] = {.025f,.07f,.09f,.45f};
+    s.Colors[ImGuiCol_TitleBgActive] = {.035f,.13f,.17f,.6f};
     s.Colors[ImGuiCol_Border] = {.15f, .23f, .28f, .7f};
     s.Colors[ImGuiCol_Text] = {.86f, .9f, .9f, 1};
     s.Colors[ImGuiCol_Button] = {.08f, .31f, .34f, 1};
@@ -94,77 +96,82 @@ void directDemo(double t, Mission &m, Camera &c, Scene &s, Particles &p) {
         m.paused = true;
     // Main applies frame-independent orbit using elapsed wall time.
 }
-static void spaceUI(Mission &m, Camera &c, UIState &ui) {
-    auto size = ImGui::GetIO().DisplaySize;
-    auto *background = ImGui::GetBackgroundDrawList();
-    background->AddRectFilled({0,0}, {size.x,22}, IM_COL32(0,0,0,255));
-    background->AddRectFilled({0,size.y-22}, size, IM_COL32(0,0,0,255));
-    ImGui::SetNextWindowPos({20,32});
-    ImGui::SetNextWindowSize({std::min(370.f, size.x-40),0});
-    ImGui::Begin("Flight telemetry", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::TextColored({.55f,.8f,.9f,1}, "BAIKONUR / BEYOND THE BLUE");
-    ImGui::TextWrapped("%s", m.phase().c_str());
-    if (m.destination >= 0) ImGui::Text("DESTINATION  /  %s", destinations[m.destination].name);
-    if (m.flight == Flight::Transit) {
-        ImGui::ProgressBar(m.progress(), {-1,5}, "");
-        ImGui::Text("HULL %03.0f%%   /   SIGNAL %03.0f%%", 100*(1-m.danger()),100*(1-m.danger()*.95f));
-        if (m.danger() > 0) ImGui::TextWrapped("%s", destinations[m.destination].warning);
-        if (m.danger() > .65f) ImGui::TextColored({1,.3f,.18f,1}, "CRITICAL / STRUCTURAL INTEGRITY LOST");
-    }
-    if (ImGui::Button("RESTART [R]")) ui.reset = true;
-    ImGui::SameLine();
-    if (ImGui::Button(m.paused ? "RESUME [P]" : "PAUSE [P]")) m.paused = !m.paused;
-    ImGui::TextDisabled("Drag / WASD: look around  |  Scroll: zoom");
+static void gameplayUI(Mission &m, Camera &c, Scene &s, UIState &ui) {
+    const auto size = ImGui::GetIO().DisplaySize;
+    ImGui::SetNextWindowPos({12,size.y-44}, ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(.25f);
+    ImGui::Begin("HUD toggle", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize);
+    if (ImGui::SmallButton(ui.panel ? "Hide controls" : "Flight controls")) ui.panel=!ui.panel;
+    ImGui::SameLine(); ImGui::TextDisabled("%.0f FPS",ui.fps);
     ImGui::End();
-    if (m.flight == Flight::Choosing || m.flight == Flight::Arrived ||
-        (m.flight == Flight::Destroyed && m.aftermath > 2.f)) {
-        ImGui::SetNextWindowPos({size.x*.5f, size.y*.55f}, ImGuiCond_Always, {.5f,.5f});
-        ImGui::SetNextWindowSize({std::min(520.f,size.x-32), std::min(450.f,size.y-90)});
-        ImGui::Begin("Navigation", nullptr, ImGuiWindowFlags_NoDecoration);
-        ImGui::PushFont(titleFont);
-        ImGui::TextUnformatted(m.flight == Flight::Choosing ? "WHERE DO WE GO?" :
-                              m.flight == Flight::Arrived ? "ORBIT ACHIEVED" : "GAME OVER");
-        ImGui::PopFont();
-        if (m.flight == Flight::Choosing) {
-            ImGui::TextWrapped("Earth is behind us. Choose a destination to begin the transfer.");
-            ImGui::TextDisabled("Cinematic scale / compressed travel time");
-            ImGui::Separator();
-            for (int i = 0; i < destinationCount; ++i) {
-                const auto &d = destinations[i];
-                ImGui::PushID(i);
-                if (ImGui::Button(d.name, {110,30})) {
-                    m.selectDestination(i);
-                    c.chase = true;
-                    glm::vec3 approach = glm::normalize(d.center-m.position());
-                    c.yaw = std::atan2(-approach.x,-approach.z)+.3f;
-                    c.pitch = .12f;
-                    c.distance = 58;
-                }
-                ImGui::SameLine();
-                ImGui::TextColored(d.dangerous ? ImVec4(1,.4f,.23f,1) : ImVec4(.5f,.8f,.75f,1),
-                                   "%s", d.dangerous ? "FATAL ENTRY" : "SAFE ORBIT");
-                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", d.warning);
-                ImGui::PopID();
+    if (!ui.panel) return;
+    ImGui::SetNextWindowPos({12,std::max(12.f,size.y-255)},ImGuiCond_Once);
+    ImGui::SetNextWindowSize({std::min(340.f,size.x-24),0},ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(.48f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10,8));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6,4));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6,4));
+    if (ImGui::Begin("Baikonur | Flight controls", &ui.panel, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::SetWindowFontScale(.9f);
+        if (m.flight==Flight::Choosing) {
+            ImGui::TextColored({.2f,.8f,.95f,1},"KAZAKHSTAN / HOME");
+            static int selected=0;
+            ImGui::SetNextItemWidth(165);
+            if (ImGui::BeginCombo("Route",destinations[selected].name)) {
+                for (int i=0;i<destinationCount;++i)
+                    if (ImGui::Selectable(destinations[i].name,selected==i)) selected=i;
+                ImGui::EndCombo();
+            }
+            ImGui::SameLine();
+            ImGui::TextColored(destinations[selected].dangerous ? ImVec4(1,.7f,.25f,1) : ImVec4(.4f,.85f,.7f,1),
+                               "%s risk",destinations[selected].dangerous ? "High" : "Low");
+            if (ImGui::Button("Travel")) {
+                if (m.selectDestination(selected)) {
+                    c.chase=true; c.distance=85; c.pitch=.25f;
+                    glm::vec3 approach=glm::normalize(m.route[1]-m.route[0]);
+                    c.yaw=std::atan2(-approach.x,-approach.z)+.4f;
+                    ui.routeBlocked=false;
+                } else ui.routeBlocked=true;
+            }
+            ImGui::SameLine(); ImGui::TextDisabled("Choose your next stop");
+            if (ui.routeBlocked) ImGui::TextWrapped("Route blocked. Choose another destination.");
+        } else if (m.flight==Flight::Transit) {
+            ImGui::Text("En route / %s",destinations[m.destination].name);
+            ImGui::ProgressBar(m.progress(),{-1,5},"");
+            ImGui::Text("Shield %.0f%%  |  %.0f%% complete",100*(1-m.danger()),100*m.progress());
+            if (m.danger()>.35f) ImGui::TextColored({1,.65f,.25f,1},"Rising heat / unstable signal");
+        } else if (m.flight==Flight::Arrived || m.flight==Flight::Destroyed) {
+            if (!m.resultReady()) ImGui::TextDisabled("Receiving telemetry...");
+            else {
+                ImGui::TextColored(m.flight==Flight::Arrived ? ImVec4(.4f,.9f,.75f,1) : ImVec4(1,.6f,.3f,1),
+                                   "%s",m.flight==Flight::Arrived ? "Stable orbit / crew safe" : "Signal lost / mission ended");
+                if (ImGui::Button("Back to Kazakhstan")) ui.reset=true;
             }
         } else {
-            ImGui::Spacing();
-            if (m.flight == Flight::Destroyed) {
-                ImGui::TextColored({1,.35f,.2f,1}, "VEHICLE DESTROYED / CREW LOST");
-                ImGui::TextWrapped("%s", destinations[m.destination].warning);
-                ImGui::TextWrapped("No response from the spacecraft. Mission control has closed the channel.");
-            } else {
-                ImGui::TextWrapped("%s survey complete. Crew safe. Engines shut down.", destinations[m.destination].name);
-                ImGui::TextWrapped("Take a moment. There is a whole universe outside the window.");
+            ImGui::Text("%s  |  T %+.1f s",m.phase().c_str(),m.clock);
+            if (ImGui::Button(m.running ? (m.paused ? "Resume [P]" : "Pause [P]") : "Launch [Space]")) {
+                if (m.running) m.paused=!m.paused; else { m.launch(); c.chase=true; }
             }
-            ImGui::Spacing();
-            ImGui::TextWrapped("Fictional mission inspired by spaceflight hazards. Distances and outcomes are simplified for gameplay.");
-            if (ImGui::Button("RETURN TO BAIKONUR", {-1,40})) ui.reset = true;
         }
-        ImGui::End();
+        if (m.inSpace()) {
+            if (ImGui::SmallButton(m.paused ? "Resume [P]" : "Pause [P]")) m.paused=!m.paused;
+        } else ImGui::SameLine();
+        if (!m.inSpace()) { if (ImGui::SmallButton("Reset [R]")) ui.reset=true; }
+        ImGui::SetNextItemWidth(230);
+        ImGui::SliderFloat("Speed",&m.speed,.25f,20.f,"%.2fx",ImGuiSliderFlags_Logarithmic|ImGuiSliderFlags_AlwaysClamp);
+        if (ImGui::CollapsingHeader("Camera & settings")) {
+            ImGui::TextWrapped("Drag / WASD: look around. Scroll: zoom. Drag this panel by its title to move it.");
+            ImGui::Checkbox("Chase camera [C]",&c.chase);
+            ImGui::Checkbox("Shake [K]",&c.shake); ImGui::SameLine(); ImGui::Checkbox("Night [N]",&s.night);
+            ImGui::Checkbox("Wireframe [F]",&s.wireframe);
+            if (ImGui::Button("Restart mission")) ui.reset=true;
+        }
     }
+    ImGui::End();
+    ImGui::PopStyleVar(3);
 }
 void drawUI(Mission &m, Camera &c, Scene &s, const Particles &p, UIState &ui) {
-    if (m.inSpace() && !ui.demo) { spaceUI(m, c, ui); return; }
+    if (!ui.demo) { gameplayUI(m, c, s, ui); return; }
     const auto &io = ImGui::GetIO();
     ImGui::SetNextWindowPos({24, 24});
     ImGui::SetNextWindowSize({294, 0});
@@ -204,7 +211,8 @@ void drawUI(Mission &m, Camera &c, Scene &s, const Particles &p, UIState &ui) {
         ImGui::Checkbox("Night lighting [N]", &s.night);
         ImGui::Checkbox("Wireframe [F]", &s.wireframe);
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 60.f);
-        ImGui::SliderFloat("Speed", &m.speed, .25f, 2.f, "%.2fx");
+        ImGui::SliderFloat("Speed", &m.speed, .25f, 20.f, "%.2fx",
+                           ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_AlwaysClamp);
     } else {
         ImGui::Spacing();
         ImGui::Text("Camera: %s", c.chase ? "Chase" : "Orbit");

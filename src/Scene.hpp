@@ -15,6 +15,7 @@ struct Object {
 class Scene {
     Mesh box{cube()}, tube{cylinder()}, cone{cylinder(0)}, ball{sphere()}, terrain{kazakhstan()};
     Mesh rock{sphere(5, 8)}, scrub{cylinder(0, 6)}, pipe{cylinder(1, 12)}, ridges{steppeRidges()};
+    Mesh rings{saturnRings()};
     Shader shader, sky;
     Texture concrete;
     GLuint skyVAO = 0;

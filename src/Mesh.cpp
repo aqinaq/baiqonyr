@@ -4,6 +4,25 @@
 #include <set>
 #include <utility>
 namespace bk {
+Geometry saturnRings() {
+    Geometry g;
+    constexpr int segments=256, bands=16;
+    for (int r=0;r<=bands;++r) {
+        float v=float(r)/bands, radius=1.f+.35f*v;
+        for (int i=0;i<=segments;++i) {
+            float u=float(i)/segments, angle=u*2*pi;
+            g.vertices.push_back({{radius*std::cos(angle),0,radius*std::sin(angle)},
+                                  {0,1,0},{u,v}});
+        }
+    }
+    for (int r=0;r<bands;++r)
+        for (int i=0;i<segments;++i) {
+            unsigned a=r*(segments+1)+i,b=a+1,c=a+segments+1,d=c+1;
+            // Both faces remain visible when orbiting above or below the ring plane.
+            for (unsigned index : {a,c,b,b,c,d,a,b,c,b,d,c}) g.indices.push_back(index);
+        }
+    return g;
+}
 Geometry cube() {
     Geometry g;
     const glm::vec3 normals[] = {{1, 0, 0},  {-1, 0, 0}, {0, 1, 0},

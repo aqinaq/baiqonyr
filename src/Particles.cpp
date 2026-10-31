@@ -49,7 +49,7 @@ void Particles::emit(const Mission &m, bool fire) {
 void Particles::update(float dt, const Mission &m) {
     if (m.paused)
         return;
-    dt *= m.speed;
+    if (m.flight != Flight::Destroyed && m.flight != Flight::Arrived) dt *= m.speed;
     if (m.flight == Flight::Destroyed && !exploded) {
         exploded = true;
         pool.clear();
@@ -85,7 +85,7 @@ void Particles::render(const Camera &c, int width, int height) {
     shader.use();
     shader.set("view", view);
     shader.set("projection",
-               glm::perspective(glm::radians(48.f), float(width) / height, .1f, 20000.f));
+               glm::perspective(glm::radians(48.f), float(width) / height, c.distance > 1000 ? 10.f : .1f, 30000.f));
     // Alpha smoke is sorted back to front. Additive fire does not need sorting.
     std::sort(pool.begin(), pool.end(), [&](const Particle &a, const Particle &b) {
         return glm::dot(a.p - c.eye, a.p - c.eye) > glm::dot(b.p - c.eye, b.p - c.eye);

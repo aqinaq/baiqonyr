@@ -217,7 +217,7 @@ int main(int argc, char **argv) {
                     if (pressed(GLFW_KEY_F))
                         scene.wireframe = !scene.wireframe;
                     if (pressed(GLFW_KEY_H))
-                        ui.help = !ui.help;
+                        ui.panel = !ui.panel;
                     float dx = float((glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) -
                                      (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS));
                     float dy = float((glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) -
@@ -247,7 +247,11 @@ int main(int argc, char **argv) {
                     camera = Camera{};
                     ui.reset = false;
                 }
+                bool wasInSpace = mission.inSpace();
                 mission.update(dt);
+                if (!wasInSpace && mission.flight == Flight::Choosing) {
+                    camera.distance = 10500; camera.pitch = 1.18f; camera.yaw = 0;
+                }
                 if (mission.flight == Flight::Choosing && o.destination >= 0) {
                     mission.selectDestination(o.destination);
                     glm::vec3 approach = glm::normalize(destinations[o.destination].center-mission.position());

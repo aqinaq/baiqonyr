@@ -4,6 +4,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <string>
+#include <vector>
+#include <limits>
 namespace bk {
 constexpr float pi = 3.14159265358979323846f;
 enum class Flight { Ascent, Choosing, Transit, Arrived, Destroyed };
@@ -15,15 +17,15 @@ struct Destination {
     bool dangerous;
 };
 inline const Destination destinations[] = {
-    {"MOON", {-170, 970, -350}, {.65,.68,.72}, 55, "Stable lunar orbit. No landing required.", false},
-    {"MARS", {240, 1040, -640}, {.72,.25,.12}, 85, "Safe orbital survey above the red planet.", false},
-    {"SUN", {-720, 1200, -1250}, {1,.55,.12}, 220, "FATAL: thermal overload. Heat shield cannot survive.", true},
-    {"VENUS", {520, 850, -900}, {.86,.65,.34}, 105, "FATAL: atmospheric entry overwhelms hull and cooling.", true},
-    {"JUPITER", {-900, 1100, 250}, {.74,.57,.39}, 230, "FATAL: deep entry. Pressure crushes the spacecraft.", true},
-    {"SATURN", {950, 1150, 100}, {.82,.72,.48}, 175, "Safe observation orbit outside the rings.", false},
-    {"MERCURY", {-420, 850, -850}, {.45,.42,.38}, 38, "Safe orbital survey. Keep the sun shield aligned.", false},
-    {"URANUS", {500, 1400, 1000}, {.32,.72,.77}, 105, "Safe distant observation orbit.", false},
-    {"NEPTUNE", {-550, 1300, 1150}, {.15,.32,.8}, 110, "Safe distant observation orbit.", false}
+    {"MOON", {-850, 5770, -1750}, {.65,.68,.72}, 55, "Stable lunar orbit. No landing required.", false},
+    {"MARS", {1200, 5840, -3200}, {.72,.25,.12}, 85, "Low-risk orbital survey above the red planet.", false},
+    {"SUN", {-3600, 6000, -6250}, {1,.55,.12}, 220, "High thermal exposure. Shield endurance uncertain.", true},
+    {"VENUS", {2600, 5650, -4500}, {.86,.65,.34}, 105, "Dense atmosphere. Heat and pressure risk.", true},
+    {"JUPITER", {-4500, 5900, 1250}, {.74,.57,.39}, 230, "Extreme pressure and turbulent cloud layers.", true},
+    {"SATURN", {4750, 5950, 500}, {.82,.72,.48}, 175, "Low-risk observation orbit outside the rings.", false},
+    {"MERCURY", {-2100, 5650, -4250}, {.45,.42,.38}, 38, "Low-risk orbital survey. Keep the sun shield aligned.", false},
+    {"URANUS", {2500, 6200, 5000}, {.32,.72,.77}, 105, "Low-risk distant observation orbit.", false},
+    {"NEPTUNE", {-2750, 6100, 5750}, {.15,.32,.8}, 110, "Low-risk distant observation orbit.", false}
 };
 constexpr int destinationCount = sizeof(destinations) / sizeof(destinations[0]);
 // Simulation metres and seconds are deliberately compressed for a classroom demo.
@@ -32,11 +34,14 @@ struct Mission {
     float clock = -8.f, speed = 1.f, separationTime = 24.f;
     Flight flight = Flight::Ascent;
     int destination = -1;
-    float travel = 0, aftermath = 0;
-    static constexpr float orbitTime = 40.f, travelDuration = 18.f;
+    float travel = 0, aftermath = 0, resultDelay = 0;
+    std::vector<glm::vec3> route;
+    float routeLength = 0;
+    static constexpr float orbitTime = 100.f, travelDuration = 18.f;
     bool inSpace() const { return flight != Flight::Ascent; }
     bool selectDestination(int index) {
         if (flight != Flight::Choosing || index < 0 || index >= destinationCount) return false;
+        if (!planRoute(index)) return false;
         destination = index;
         travel = 0;
         flight = Flight::Transit;
@@ -48,13 +53,63 @@ struct Mission {
             ? std::clamp((progress() - .45f) / .55f, 0.f, 1.f) : 0.f;
     }
     glm::vec3 position() const {
-        glm::vec3 origin(0, altitudeAt(std::min(clock, orbitTime)), 0);
-        if (destination < 0) return origin;
-        const auto &d = destinations[destination];
-        glm::vec3 end = d.center + glm::normalize(origin - d.center) * (d.radius + 38.f);
-        float t = progress();
-        return glm::mix(origin, end, t*t*(3-2*t));
+        if (route.empty()) return {0, altitudeAt(std::min(clock, orbitTime)), 0};
+        float distance = progress() * routeLength;
+        for (std::size_t i=1; i<route.size(); ++i) {
+            float length = glm::length(route[i]-route[i-1]);
+            if (distance <= length) return glm::mix(route[i-1],route[i],distance/std::max(length,.001f));
+            distance -= length;
+        }
+        return route.back();
     }
+    static float clearance(int i) { return i == 5 ? 330.f : destinations[i].radius + 45.f; }
+    static bool clearSegment(glm::vec3 a, glm::vec3 b) {
+        glm::vec3 delta=b-a;
+        float length2=glm::dot(delta,delta);
+        for (int i=0; i<destinationCount; ++i) {
+            float t=length2>0 ? std::clamp(glm::dot(destinations[i].center-a,delta)/length2,0.f,1.f) : 0;
+            if (glm::length(a+t*delta-destinations[i].center) < clearance(i)) return false;
+        }
+        return true;
+    }
+    bool planRoute(int index) {
+        glm::vec3 start(0,altitudeAt(orbitTime),0);
+        const auto &d=destinations[index];
+        glm::vec3 end=d.center+glm::normalize(start-d.center)*(clearance(index)+35.f);
+        std::vector<glm::vec3> nodes{start,end};
+        // Visibility graph: connect only segments outside every planet and ring envelope.
+        for (int i=0; i<destinationCount; ++i)
+            for (int axis=0; axis<3; ++axis)
+                for (float sign : {-1.f,1.f}) {
+                    auto point=destinations[i].center;
+                    point[axis]+=sign*(clearance(i)*1.8f+100.f);
+                    nodes.push_back(point);
+                }
+        std::vector<float> cost(nodes.size(),std::numeric_limits<float>::infinity());
+        std::vector<int> previous(nodes.size(),-1);
+        std::vector<bool> visited(nodes.size(),false);
+        cost[0]=0;
+        for (std::size_t step=0; step<nodes.size(); ++step) {
+            int u=-1;
+            for (std::size_t i=0; i<nodes.size(); ++i)
+                if (!visited[i] && (u<0 || cost[i]<cost[u])) u=int(i);
+            if (u<0 || !std::isfinite(cost[u])) break;
+            if (u==1) break;
+            visited[u]=true;
+            for (std::size_t v=0; v<nodes.size(); ++v) {
+                float next=cost[u]+glm::length(nodes[v]-nodes[u]);
+                if (!visited[v] && next<cost[v] && clearSegment(nodes[u],nodes[v])) {
+                    cost[v]=next; previous[v]=u;
+                }
+            }
+        }
+        if (!std::isfinite(cost[1])) return false;
+        route.clear();
+        for (int at=1; at>=0; at=previous[at]) route.push_back(nodes[at]);
+        std::reverse(route.begin(),route.end()); routeLength=cost[1];
+        return true;
+    }
+    bool resultReady() const { return resultDelay >= 5.f; }
     void launch() {
         if (!running) {
             running = true;
@@ -65,7 +120,11 @@ struct Mission {
     void update(float dt) {
         if (!running || paused) return;
         float step = std::max(0.f, dt) * speed;
-        if (flight == Flight::Destroyed) { aftermath = std::min(aftermath + step, 12.f); return; }
+        if (flight == Flight::Destroyed || flight == Flight::Arrived) {
+            resultDelay += std::max(0.f, dt); // Real seconds, independent of playback speed.
+            aftermath = std::min(aftermath + std::max(0.f, dt), 12.f);
+            return;
+        }
         if (flight == Flight::Choosing || flight == Flight::Arrived) return;
         if (flight == Flight::Transit) {
             travel = std::min(travel + step, travelDuration);
@@ -74,7 +133,10 @@ struct Mission {
             return;
         }
         clock = std::min(clock + step, orbitTime);
-        if (clock >= 24.f) separate();
+        if (clock >= 24.f && !separated) {
+            separated = true;
+            separationTime = 24.f;
+        }
         if (clock >= orbitTime) flight = Flight::Choosing;
     }
 
@@ -117,8 +179,8 @@ struct Mission {
     std::string phase() const {
         if (flight == Flight::Choosing) return "AWAITING DESTINATION";
         if (flight == Flight::Transit) return danger() > .4f ? "WARNING / HULL FAILURE" : "INTERPLANETARY TRANSFER";
-        if (flight == Flight::Arrived) return "ORBIT ACHIEVED";
-        if (flight == Flight::Destroyed) return "SIGNAL LOST / GAME OVER";
+        if (flight == Flight::Arrived) return resultReady() ? "ORBIT ACHIEVED" : "STABILIZING";
+        if (flight == Flight::Destroyed) return resultReady() ? "SIGNAL LOST" : "RECONNECTING";
         if (!running)
             return "READY FOR LAUNCH";
         if (clock < -2)
