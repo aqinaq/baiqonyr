@@ -54,6 +54,8 @@ Verified locally: Apple M1, 8 GiB RAM, macOS 26.3.1, AppleClang 21.0.0, Release,
 
 Camera movement remains available while paused. Input over the control panel belongs to the interface. The flight path is a compressed visual trajectory, not physical aerospace simulation.
 
+At the end of ascent, a space overview shows the rocket and destination bodies. Click a body or its name to start the flight. The Moon, Mars and Mercury include a gradual final descent and upright surface landing; gas giants remain orbital destinations, and hazardous routes retain their mission-failure outcome.
+
 ## Features and source layout
 
 - Indexed procedural cubes, cylinders, cones and spheres form the pad, rocket, boosters, gantry, buildings, tanks, radome, roads and lights.

@@ -2,7 +2,7 @@
 in vec3 worldPos,normal;in vec2 uv;
 out vec4 fragColor;
 uniform vec3 baseColor,eye,sunDir,enginePos;
-uniform float shininess,emission,enginePower,night,altitude,time;
+uniform float shininess,emission,enginePower,night,altitude,time,flagReveal;
 uniform int material,lightsOn;
 uniform sampler2D concrete;
 float groundHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
@@ -84,9 +84,6 @@ void main(){
  }
 
  if(material==1)albedo*=texture(concrete,uv*8.0).rgb;
- if(material==2 && worldPos.y > -.2 && abs(worldPos.x-700.0)<700.0 && abs(worldPos.z-100.0)<350.0){
-  fragColor=vec4(flagColor(vec2(worldPos.x/1400.0,.5-(worldPos.z-100.0)/700.0)),1);return;
- }
  if(material==2){
 
   vec2 p=worldPos.xz;
@@ -115,5 +112,12 @@ void main(){
  lit+=albedo*emission;
  float fog=1-exp(-length(eye-worldPos)*.0014*(1-altitude));
  lit=mix(lit,mix(vec3(.57,.44,.3),vec3(.025,.04,.075),night),fog);
- fragColor=vec4(pow(max(lit,vec3(0)),vec3(1.0/2.2)),1);
+ vec3 color=pow(max(lit,vec3(0)),vec3(1.0/2.2));
+ // Reveal the country-sized flag only on the map's top surface during ascent.
+ if(material==2 && normal.y>.9 && flagReveal>0.0){
+  vec2 p=vec2((worldPos.x+4126.2167)/10000.0, (worldPos.z+3459.1282)/5380.5747);
+  p.y=1.0-p.y;
+  color=mix(color,flagColor(p),flagReveal);
+ }
+ fragColor=vec4(color,1);
 }

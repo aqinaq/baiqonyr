@@ -17,13 +17,13 @@ struct Destination {
     bool dangerous;
 };
 inline const Destination destinations[] = {
-    {"MOON", {-850, 5770, -1750}, {.65,.68,.72}, 55, "Stable lunar orbit. No landing required.", false},
-    {"MARS", {1200, 5840, -3200}, {.72,.25,.12}, 85, "Low-risk orbital survey above the red planet.", false},
+    {"MOON", {-850, 5770, -1750}, {.65,.68,.72}, 55, "Controlled descent and landing on the lunar surface.", false},
+    {"MARS", {1200, 5840, -3200}, {.72,.25,.12}, 85, "Controlled descent and landing on Mars.", false},
     {"SUN", {-3600, 6000, -6250}, {1,.55,.12}, 220, "High thermal exposure. Shield endurance uncertain.", true},
     {"VENUS", {2600, 5650, -4500}, {.86,.65,.34}, 105, "Dense atmosphere. Heat and pressure risk.", true},
     {"JUPITER", {-4500, 5900, 1250}, {.74,.57,.39}, 230, "Extreme pressure and turbulent cloud layers.", true},
     {"SATURN", {4750, 5950, 500}, {.82,.72,.48}, 175, "Low-risk observation orbit outside the rings.", false},
-    {"MERCURY", {-2100, 5650, -4250}, {.45,.42,.38}, 38, "Low-risk orbital survey. Keep the sun shield aligned.", false},
+    {"MERCURY", {-2100, 5650, -4250}, {.45,.42,.38}, 38, "Surface landing. Keep the sun shield aligned.", false},
     {"URANUS", {2500, 6200, 5000}, {.32,.72,.77}, 105, "Low-risk distant observation orbit.", false},
     {"NEPTUNE", {-2750, 6100, 5750}, {.15,.32,.8}, 110, "Low-risk distant observation orbit.", false}
 };
@@ -54,7 +54,12 @@ struct Mission {
     }
     glm::vec3 position() const {
         if (route.empty()) return {0, altitudeAt(std::min(clock, orbitTime)), 0};
-        float distance = progress() * routeLength;
+        if (canLand() && progress() > .75f) {
+            float t = (progress() - .75f) / .25f;
+            t = t*t*(3.f-2.f*t);
+            return glm::mix(route.back(), landingPoint(), t);
+        }
+        float distance = std::min(progress() / (canLand() ? .75f : 1.f), 1.f) * routeLength;
         for (std::size_t i=1; i<route.size(); ++i) {
             float length = glm::length(route[i]-route[i-1]);
             if (distance <= length) return glm::mix(route[i-1],route[i],distance/std::max(length,.001f));
@@ -109,6 +114,13 @@ struct Mission {
         std::reverse(route.begin(),route.end()); routeLength=cost[1];
         return true;
     }
+    bool canLand() const { return destination == 0 || destination == 1 || destination == 6; }
+    glm::vec3 landingNormal() const {
+        return glm::normalize(route.back() - destinations[destination].center);
+    }
+    glm::vec3 landingPoint() const {
+        return destinations[destination].center + landingNormal() * (destinations[destination].radius + .15f);
+    }
     bool resultReady() const { return resultDelay >= 5.f; }
     void launch() {
         if (!running) {
@@ -156,8 +168,21 @@ struct Mission {
     glm::mat4 rocket() const { auto transform = glm::translate(glm::mat4(1), position());
         if (destination >= 0) {
             glm::vec3 direction = glm::normalize(destinations[destination].center - glm::vec3(0, altitudeAt(orbitTime), 0));
-            glm::vec3 axis = glm::normalize(glm::cross(glm::vec3(0,1,0), direction));
-            transform = glm::rotate(transform, std::acos(direction.y) * std::min(progress()*5.f, 1.f), axis);
+            if (canLand()) {
+                float turn = std::clamp((progress()-.55f)/.20f, 0.f, 1.f);
+                turn = turn*turn*(3.f-2.f*turn);
+                glm::vec3 outward = landingNormal();
+                float cosine = std::clamp(glm::dot(direction,outward),-1.f,1.f);
+                glm::vec3 tangent = outward-direction*cosine;
+                if (glm::length(tangent)<.0001f)
+                    tangent = glm::cross(direction, std::abs(direction.y)<.9f ? glm::vec3(0,1,0) : glm::vec3(1,0,0));
+                tangent=glm::normalize(tangent);
+                float angle=std::acos(cosine)*turn;
+                direction=glm::normalize(direction*std::cos(angle)+tangent*std::sin(angle));
+            }
+            glm::vec3 cross = glm::cross(glm::vec3(0,1,0), direction);
+            glm::vec3 axis = glm::length(cross) > .0001f ? glm::normalize(cross) : glm::vec3(1,0,0);
+            transform = glm::rotate(transform, std::acos(std::clamp(direction.y, -1.f, 1.f)) * std::min(progress()*5.f, 1.f), axis);
         }
         return transform; }
     glm::mat4 booster(int i) const {
@@ -178,8 +203,9 @@ struct Mission {
     }
     std::string phase() const {
         if (flight == Flight::Choosing) return "AWAITING DESTINATION";
+        if (flight == Flight::Transit && canLand() && progress() > .75f) return "LANDING / CONTROLLED DESCENT";
         if (flight == Flight::Transit) return danger() > .4f ? "WARNING / HULL FAILURE" : "INTERPLANETARY TRANSFER";
-        if (flight == Flight::Arrived) return resultReady() ? "ORBIT ACHIEVED" : "STABILIZING";
+        if (flight == Flight::Arrived) return resultReady() ? (canLand() ? "LANDED" : "ORBIT ACHIEVED") : "STABILIZING";
         if (flight == Flight::Destroyed) return resultReady() ? "SIGNAL LOST" : "RECONNECTING";
         if (!running)
             return "READY FOR LAUNCH";

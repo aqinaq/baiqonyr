@@ -69,9 +69,6 @@ Scene::Scene(const std::string &path)
         ground.push_back(obj(1, p, {.08, 4, .08}, steel));
         ground.push_back(obj(3, p + glm::vec3(0, 2, 0), {.18, .18, .18}, orange, 0, 32, 1.5));
     }
-    // Stylized national flag: cyan field, gold sun, eagle and hoist ornament in GLSL.
-    ground.push_back(obj(1, {11, 8, -6}, {.10,16,.10}, {.65,.68,.7}));
-    ground.push_back(obj(0, {14, 14, -6}, {6,3,.07}, {.02,.65,.82}, 7, 4, .25f));
     buildEnvironment();
     // All rocket parts inherit the animated core transform.
     rocketParts.push_back(obj(1, {0, 8.2, 0}, {1.16, 12, 1.16}, white, 0, 90));
@@ -83,6 +80,13 @@ Scene::Scene(const std::string &path)
     rocketParts.push_back(obj(1, {0, 1.65, 0}, {.62, 1, .62}, dark));
     for (float y : {6.f, 10.5f, 12.4f})
         rocketParts.push_back(obj(1, {0, y, 0}, {1.175, .1, 1.175}, steel));
+    // Four landing struts and broad feet meet the surface below the engine bell.
+    for (int i=0; i<4; ++i) {
+        float angle = i*pi*.5f;
+        glm::vec3 radial(std::cos(angle),0,std::sin(angle));
+        rocketParts.push_back(obj(0, radial*1.5f+glm::vec3(0,1.1f,0), {.18f,2.0f,.18f}, steel));
+        rocketParts.push_back(obj(0, radial*1.5f+glm::vec3(0,.1f,0), {.7f,.2f,.7f}, dark));
+    }
     // Narrow turquoise panels on four sides refer to the Kazakhstan palette.
     for (int i = 0; i < 4; i++) {
         float a = i * pi * .5f;
@@ -116,6 +120,7 @@ void Scene::render(const Mission &m, Camera &camera, int width, int height, floa
     glm::mat4 view = camera.view(m, realTime),
               projection =
                   glm::perspective(glm::radians(48.f), float(width) / height, camera.distance > 1000 ? 10.f : .1f, 30000.f);
+    camera.viewProjection = projection * view;
     float a = atmosphere(m.altitude());
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glDisable(GL_DEPTH_TEST);
@@ -141,21 +146,22 @@ void Scene::render(const Mission &m, Camera &camera, int width, int height, floa
     shader.set("sunDir", glm::vec3(-.6, .7, -.8));
     shader.set("night", night ? 1.f : 0.f);
     shader.set("altitude", a);
+    shader.set("flagReveal", glm::smoothstep(800.f, 4500.f, m.altitude()));
     shader.set("lightsOn", lights ? 1 : 0);
     shader.set("enginePos", glm::vec3(m.rocket() * glm::vec4(0, 1.4f, 0, 1)));
     shader.set("enginePower", m.ignition() ? 9.f : 0.f);
     for (const auto &o : ground)
-        if (o.mesh == 4 || m.altitude() < 1000.f) draw(o, glm::mat4(1));
+        if (!m.inSpace() && (o.mesh == 4 || m.altitude() < 1000.f)) draw(o, glm::mat4(1));
     if (m.altitude() > 350.f) {
 // The Kazakhstan terrain remains our home world at every altitude.
         for (int i = 0; i < destinationCount; ++i) {
             const auto &d = destinations[i];
-            draw(obj(3, d.center, glm::vec3(d.radius), d.color, i == 2 ? 5 : 10+i,
+            draw(obj(3, d.center, glm::vec3(m.flight == Flight::Choosing ? std::max(d.radius, 260.f) : d.radius), d.color, i == 2 ? 5 : 10+i,
                      8, i == 2 ? 2.5f : .12f), glm::mat4(1));
             if (i == 5) {
                 Object ring=obj(9,d.center,{210,210,210},{.72,.62,.43},19,4,.2f);
                 ring.transform=glm::translate(glm::mat4(1),d.center)*
-                    glm::rotate(glm::mat4(1),.24f,glm::vec3(1,0,0))*glm::scale(glm::mat4(1),glm::vec3(210));
+                    glm::rotate(glm::mat4(1),.24f,glm::vec3(1,0,0))*glm::scale(glm::mat4(1),glm::vec3(m.flight == Flight::Choosing ? 360.f : 210.f));
                 draw(ring,glm::mat4(1));
             }
         }
@@ -164,7 +170,8 @@ void Scene::render(const Mission &m, Camera &camera, int width, int height, floa
         for (auto o : rocketParts) {
             o.color = glm::mix(o.color, glm::vec3(1,.16f,.025f), m.danger()*.65f);
             o.emission += m.danger()*1.5f;
-            draw(o, m.rocket());
+            draw(o, m.flight == Flight::Choosing
+                        ? glm::scale(m.rocket(), glm::vec3(65.f)) : m.rocket());
         }
     } else {
         for (size_t i = 0; i < rocketParts.size(); ++i) {

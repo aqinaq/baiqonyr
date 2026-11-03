@@ -74,6 +74,12 @@ int main() {
             require(!trip.selectDestination(0), "cannot change route mid-flight");
             trip.update(9);
             require(trip.flight == (destinations[i].dangerous ? Flight::Destroyed : Flight::Arrived), "route resolves to correct outcome");
+            if (trip.canLand()) {
+                require(std::abs(glm::length(trip.position()-destinations[i].center) - destinations[i].radius - .15f)<.002f,
+                        "touchdown rests on the selected surface");
+                glm::vec3 up = glm::normalize(glm::vec3(trip.rocket()[1]));
+                require(glm::dot(up,trip.landingNormal())>.999f, "landed rocket stands upright");
+            }
             require(!trip.ignition(), "engines stop at terminal outcome");
             require(!trip.resultReady(), "outcome is not announced immediately");
             trip.speed=20;

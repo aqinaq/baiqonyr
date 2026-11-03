@@ -96,6 +96,47 @@ void directDemo(double t, Mission &m, Camera &c, Scene &s, Particles &p) {
         m.paused = true;
     // Main applies frame-independent orbit using elapsed wall time.
 }
+static void destinationUI(Mission &m, Camera &c, UIState &ui) {
+    const auto size = ImGui::GetIO().DisplaySize;
+    ImGui::SetNextWindowPos({0,0});
+    ImGui::SetNextWindowSize(size);
+    ImGui::Begin("Choose destination", nullptr, ImGuiWindowFlags_NoDecoration |
+                 ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings);
+    ImGui::SetCursorPos({20,16});
+    ImGui::TextUnformatted("CHOOSE YOUR DESTINATION");
+    ImGui::SetCursorPos({20,42});
+    ImGui::TextDisabled("Click a planet to travel. Moon, Mars and Mercury allow landing.");
+    int chosen = -1;
+    for (int i=0; i<destinationCount; ++i) {
+        const auto &d = destinations[i];
+        glm::vec4 clip = c.viewProjection * glm::vec4(d.center,1);
+        if (clip.w <= 0) continue;
+        glm::vec3 ndc = glm::vec3(clip)/clip.w;
+        ImVec2 center((ndc.x*.5f+.5f)*size.x, (.5f-ndc.y*.5f)*size.y);
+        glm::vec4 edge = c.viewProjection * glm::vec4(d.center + glm::vec3(std::max(d.radius,260.f),0,0),1);
+        float radius = std::max(16.f, std::abs(edge.x/edge.w-ndc.x)*size.x*.5f);
+        ImGui::PushID(i);
+        ImGui::SetCursorPos({center.x-radius-8,center.y-radius-8});
+        if (ImGui::InvisibleButton("planet",{2*radius+16,2*radius+16})) chosen=i;
+        if (ImGui::IsItemHovered()) {
+            ImGui::GetWindowDrawList()->AddCircle(center,radius+6,IM_COL32(70,230,255,255),48,2);
+            ImGui::SetTooltip("%s",d.warning);
+        }
+        ImVec2 text = ImGui::CalcTextSize(d.name);
+        ImGui::SetCursorPos({center.x-text.x*.5f-8,center.y+radius+9});
+        if (ImGui::SmallButton(d.name)) chosen=i;
+        ImGui::PopID();
+    }
+    ImGui::End();
+    if (chosen >= 0) {
+        ui.routeBlocked = !m.selectDestination(chosen);
+        if (!ui.routeBlocked) {
+            c.chase=true; c.distance=85; c.pitch=.25f;
+            glm::vec3 approach=glm::normalize(m.route[1]-m.route[0]);
+            c.yaw=std::atan2(-approach.x,-approach.z)+.4f;
+        }
+    }
+}
 static void gameplayUI(Mission &m, Camera &c, Scene &s, UIState &ui) {
     const auto size = ImGui::GetIO().DisplaySize;
     ImGui::SetNextWindowPos({12,size.y-44}, ImGuiCond_Always);
@@ -105,7 +146,7 @@ static void gameplayUI(Mission &m, Camera &c, Scene &s, UIState &ui) {
     ImGui::SameLine(); ImGui::TextDisabled("%.0f FPS",ui.fps);
     ImGui::End();
     if (!ui.panel) return;
-    ImGui::SetNextWindowPos({12,std::max(12.f,size.y-255)},ImGuiCond_Once);
+    ImGui::SetNextWindowPos({12,12},ImGuiCond_Once);
     ImGui::SetNextWindowSize({std::min(340.f,size.x-24),0},ImGuiCond_Always);
     ImGui::SetNextWindowBgAlpha(.48f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10,8));
@@ -136,7 +177,7 @@ static void gameplayUI(Mission &m, Camera &c, Scene &s, UIState &ui) {
             ImGui::SameLine(); ImGui::TextDisabled("Choose your next stop");
             if (ui.routeBlocked) ImGui::TextWrapped("Route blocked. Choose another destination.");
         } else if (m.flight==Flight::Transit) {
-            ImGui::Text("En route / %s",destinations[m.destination].name);
+            ImGui::Text("%s / %s",m.canLand() && m.progress()>.75f ? "Landing" : "En route",destinations[m.destination].name);
             ImGui::ProgressBar(m.progress(),{-1,5},"");
             ImGui::Text("Shield %.0f%%  |  %.0f%% complete",100*(1-m.danger()),100*m.progress());
             if (m.danger()>.35f) ImGui::TextColored({1,.65f,.25f,1},"Rising heat / unstable signal");
@@ -144,7 +185,7 @@ static void gameplayUI(Mission &m, Camera &c, Scene &s, UIState &ui) {
             if (!m.resultReady()) ImGui::TextDisabled("Receiving telemetry...");
             else {
                 ImGui::TextColored(m.flight==Flight::Arrived ? ImVec4(.4f,.9f,.75f,1) : ImVec4(1,.6f,.3f,1),
-                                   "%s",m.flight==Flight::Arrived ? "Stable orbit / crew safe" : "Signal lost / mission ended");
+                                   "%s",m.flight==Flight::Arrived ? (m.canLand() ? "Landed safely / crew safe" : "Stable orbit / crew safe") : "Signal lost / mission ended");
                 if (ImGui::Button("Back to Kazakhstan")) ui.reset=true;
             }
         } else {
@@ -171,7 +212,11 @@ static void gameplayUI(Mission &m, Camera &c, Scene &s, UIState &ui) {
     ImGui::PopStyleVar(3);
 }
 void drawUI(Mission &m, Camera &c, Scene &s, const Particles &p, UIState &ui) {
-    if (!ui.demo) { gameplayUI(m, c, s, ui); return; }
+    if (!ui.demo) {
+        if (m.flight == Flight::Choosing) destinationUI(m,c,ui);
+        else gameplayUI(m, c, s, ui);
+        return;
+    }
     const auto &io = ImGui::GetIO();
     ImGui::SetNextWindowPos({24, 24});
     ImGui::SetNextWindowSize({294, 0});
